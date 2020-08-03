@@ -1,0 +1,43 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    repositories {
+        google()
+        jcenter()
+
+    }
+    dependencies {
+        classpath ProjectDependencies.androidGradlePlugin
+        classpath ProjectDependencies.kotlinGradlePlugin
+        classpath ProjectDependencies.kotlinSerialization
+        classpath ProjectDependencies.netflixPublishingPlugin
+        classpath ProjectDependencies.netflixReleasePlugin
+        classpath ProjectDependencies.netflixBintrayPlugin
+        classpath ProjectDependencies.jacoco
+        classpath ProjectDependencies.dokka
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+        maven {
+            url "https://dl.bintray.com/openmined/KotlinSyft"
+        }
+        maven { url 'https://jitpack.io' }
+        //latest robolectric
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
+    }
+}
+
+allprojects {
+    apply plugin: "nebula.release"
+    group = "org.openmined.kotlinsyft"
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

@@ -1,5 +1,7 @@
 package org.openmined.syft.domain
 
+import android.os.Environment
+import android.os.Environment.getExternalStorageDirectory
 import android.util.Log
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
@@ -17,6 +19,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 internal const val PLAN_OP_TYPE = "torchscript"
 private const val TAG = "JobDownloader"
+private const val FILEDIR = "FilesDir location"
 
 @ExperimentalUnsignedTypes
 internal class JobRepository(
@@ -109,6 +112,7 @@ internal class JobRepository(
                 )
             )
         }
+        Log.d(FILEDIR, config.filesDir.toString())
         protocols.forEach { (_, protocol) ->
             protocol.protocolFileLocation = "${config.filesDir}/protocols"
             downloadList.add(

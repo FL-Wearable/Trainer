@@ -1,5 +1,6 @@
 package org.openmined.syft.unit.domain
 
+import android.os.Environment
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.eq
@@ -122,6 +123,7 @@ class JobRepositoryTest {
         val modelIS: InputStream = "Model Content".byteInputStream()
         val networkDisposable = CompositeDisposable()
         val jobStatusProcessor = PublishProcessor.create<JobStatusMessage>()
+        val dir = "${Environment.getExternalStorageDirectory()}/models"
 
         whenever(model.pyGridModelId) doReturn modelId
 

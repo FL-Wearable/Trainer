@@ -6,7 +6,7 @@ import org.openmined.syft.demo.federated.domain.Batch
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
-private const val FEATURESIZE = 784
+private const val FEATURESIZE = 9
 
 class LocalMNISTDataDataSource constructor(
     private val resources: Resources

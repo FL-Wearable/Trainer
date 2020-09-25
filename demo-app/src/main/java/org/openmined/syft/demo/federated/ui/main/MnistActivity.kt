@@ -15,7 +15,7 @@ import kotlinx.android.synthetic.main.activity_mnist.progressBar
 import kotlinx.android.synthetic.main.activity_mnist.toolbar
 import org.openmined.syft.demo.R
 import org.openmined.syft.demo.databinding.ActivityMnistBinding
-import org.openmined.syft.demo.federated.datasource.LocalMNISTDataDataSource
+import org.openmined.syft.demo.federated.datasource.LocalAllinoneDataSource
 import org.openmined.syft.demo.federated.domain.MNISTDataRepository
 import org.openmined.syft.demo.federated.service.WorkerRepository
 import org.openmined.syft.demo.federated.ui.ContentState
@@ -75,8 +75,8 @@ class MnistActivity : AppCompatActivity() {
                 .setMessagingClient(SyftConfiguration.NetworkingClients.HTTP)
                 .setCacheTimeout(0L)
                 .build()
-        val localMNISTDataDataSource = LocalMNISTDataDataSource(resources)
-        val dataRepository = MNISTDataRepository(localMNISTDataDataSource)
+        val LocalAllinoneDataSource = LocalAllinoneDataSource(resources)
+        val dataRepository = MNISTDataRepository(LocalAllinoneDataSource)
         viewModel.launchForegroundTrainer(config, dataRepository)
     }
 

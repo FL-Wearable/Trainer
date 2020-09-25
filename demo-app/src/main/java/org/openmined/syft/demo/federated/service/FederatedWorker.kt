@@ -16,7 +16,7 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import org.openmined.syft.demo.federated.datasource.LocalMNISTDataDataSource
+import org.openmined.syft.demo.federated.datasource.LocalAllinoneDataSource
 import org.openmined.syft.demo.federated.domain.MNISTDataRepository
 import org.openmined.syft.demo.federated.domain.TrainingTask
 import org.openmined.syft.demo.federated.logging.MnistLogger
@@ -51,8 +51,8 @@ class FederatedWorker(
                 .enableBackgroundServiceExecution()
                 .setCacheTimeout(0L)
                 .build()
-        val localMNISTDataDataSource = LocalMNISTDataDataSource(serviceContext.resources)
-        val dataRepository = MNISTDataRepository(localMNISTDataDataSource)
+        val LocalAllinoneDataSource = LocalAllinoneDataSource(serviceContext.resources)
+        val dataRepository = MNISTDataRepository(LocalAllinoneDataSource)
         setForegroundAsync(createForegroundInfo(0))
         return awaitTask(
             TrainingTask(

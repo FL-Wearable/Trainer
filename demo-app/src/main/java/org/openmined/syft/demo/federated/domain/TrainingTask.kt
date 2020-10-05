@@ -27,7 +27,7 @@ class TrainingTask(
 
     fun runTask(logger: MnistLogger): Single<Result> {
         syftWorker = Syft.getInstance(configuration, authToken)
-        val mnistJob = syftWorker!!.newJob("mnist", "1.0.0")
+        val mnistJob = syftWorker!!.newJob("smartsport", "1.0.0")
         val statusPublisher = PublishProcessor.create<Result>()
 
         logger.postLog("MNIST job started \n\nChecking for download and upload speeds")

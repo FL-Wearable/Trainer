@@ -68,7 +68,7 @@ class LocalAllinoneDataSource constructor(
 
     private fun returnDataReader() = BufferedReader(
         InputStreamReader(
-            resources.openRawResource(R.raw.alla)
+            resources.openRawResource(R.raw.p2_shuf)
         )
     )
 }

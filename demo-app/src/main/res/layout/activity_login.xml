@@ -83,7 +83,7 @@
                 android:id="@+id/button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_margin="70dp"
+                android:layout_margin="30dp"
                 android:background="@drawable/button_gradient"
                 android:fadingEdge="horizontal|vertical"
                 android:text="@string/submit"
@@ -94,6 +94,18 @@
                 android:textStyle="bold"
                 tools:layout_editor_absoluteX="161dp"
                 tools:layout_editor_absoluteY="478dp" />
+
+            <Button
+                android:id="@+id/send"
+                android:layout_width="133dp"
+                android:layout_height="wrap_content"
+                android:background="@drawable/button_gradient"
+                android:fadingEdge="horizontal|vertical"
+                android:text="@string/send"
+                android:textAllCaps="true"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold"/>
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

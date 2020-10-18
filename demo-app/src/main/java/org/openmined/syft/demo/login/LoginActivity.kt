@@ -10,6 +10,8 @@ import androidx.lifecycle.ViewModelProvider
 import org.openmined.syft.demo.R
 import org.openmined.syft.demo.databinding.ActivityLoginBinding
 import org.openmined.syft.demo.federated.ui.main.MnistActivity
+import org.openmined.syft.demo.sync.UpdateModel
+import java.io.File
 
 @ExperimentalUnsignedTypes
 @ExperimentalStdlibApi
@@ -39,6 +41,17 @@ class LoginActivity : AppCompatActivity() {
                 binding.error.text = getString(R.string.error_url)
                 binding.error.visibility = TextView.VISIBLE
             }
+        }
+
+
+        binding.send.setOnClickListener {
+            val modelfile = File("${this.filesDir}/models", "model.pb")
+            val updateModel = object : UpdateModel() {
+                override fun onPostExecute(bool: Boolean?) {
+                    super.onPostExecute(bool)
+                }
+            }
+            updateModel.execute(modelfile)
         }
 
         binding.url.setOnEditorActionListener { _, actionId, _ ->

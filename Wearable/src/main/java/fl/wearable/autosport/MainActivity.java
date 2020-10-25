@@ -49,11 +49,9 @@ import fl.wearable.autosport.lib.IDataListener;
 import fl.wearable.autosport.lib.ISensorReadout;
 import fl.wearable.autosport.lib.MeterView;
 import fl.wearable.autosport.lib.SensorCollector;
-import fl.wearable.autosport.sensors.AcceleratorSensorData;
 import fl.wearable.autosport.sensors.HeartRateSensorData;
 import fl.wearable.autosport.sync.AsyncSaver;
 import fl.wearable.autosport.sync.DataLayerListenerService;
-import fl.wearable.autosport.sync.StartSend;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -102,11 +100,17 @@ public class MainActivity extends FragmentActivity
     private static final String PREFERENCES_GYROSCOPE_SENSOR = "gyroscope_sensor";
     private static final String PREFERENCES_GEO_ALWAYS_ON = "geo_always_on";
     private static final String PREFERENCES_DISPLAY_ALWAYS_ON = "display_always_on";
+
+    // for transmissions
     private static final String CAPABILITY_1_NAME = "capability_1";
     private static final String CAPABILITY_2_NAME = "capability_2";
+    private static final String COUNT_PATH = "/count";
+    private static final String FILE_PATH = "/sync";
+    private static final String DATA_KEY = "datafile";
+    private static final String COUNT_KEY = "count";
+    private java.util.concurrent.ScheduledExecutorService mGeneratorExecutor;
+    private java.util.concurrent.ScheduledFuture<?> mDataItemGeneratorFuture;
 
-    private static final String PREFERENCES_ADDRESS = "address";
-    private static final String PREFERENCES_PORT = "port";
     private final Collection<HeartRateSensorData> heartRateData = new ArrayList<>();
     private Intent sensorCollectorIntent;
     private ViewPager mPager;
@@ -322,6 +326,9 @@ public class MainActivity extends FragmentActivity
         pagerAdapter = new ScreenSlidePagerAdapter(getSupportFragmentManager(), mMainView, mCapacityView, mFilesView, mSettingsView);
         mPager.setAdapter(pagerAdapter);
 
+        // for transmissions
+        mGeneratorExecutor = new java.util.concurrent.ScheduledThreadPoolExecutor(1);
+
         mDataForwarderHandler = new Handler();
 
     }
@@ -340,9 +347,10 @@ public class MainActivity extends FragmentActivity
                             }
                         });
 
-                        new StartSend().execute(files);
-
-                        updateFileList();
+                        for (File file : files) {
+                            sendData(toAsset(file));
+                            file.delete();
+                        }
                     }
                 })
                 .setNegativeButton(android.R.string.no, null).show();
@@ -365,6 +373,9 @@ public class MainActivity extends FragmentActivity
     protected void onResume() {
         super.onResume();
         Log.d(TAG, "onResume");
+        mDataItemGeneratorFuture =
+                mGeneratorExecutor.scheduleWithFixedDelay(
+                        new DataItemGenerator(), 1, 5, java.util.concurrent.TimeUnit.SECONDS);
         Wearable.getDataClient(this).addListener(this);
         Wearable.getMessageClient(this).addListener(this);
         mDataForwarderHandler.post(mDataForwarderTask);
@@ -376,6 +387,7 @@ public class MainActivity extends FragmentActivity
     protected void onPause() {
         super.onPause();
         Log.d(TAG, "onPause");
+        mDataItemGeneratorFuture.cancel(true /* mayInterruptIfRunning */);
         Wearable.getDataClient(this).removeListener(this);
         Wearable.getMessageClient(this).removeListener(this);
         Wearable.getCapabilityClient(this).removeListener(this);
@@ -546,14 +558,21 @@ public class MainActivity extends FragmentActivity
         for (DataEvent event : dataEvents) {
             if (event.getType() == DataEvent.TYPE_CHANGED) {
                 String path = event.getDataItem().getUri().getPath();
-                if (DataLayerListenerService.MODEL_PATH.equals(path)) {
+                Boolean key = DataMapItem.fromDataItem(event.getDataItem()).getDataMap().containsKey(DataLayerListenerService.MODEL_KEY);
+                if (DataLayerListenerService.FILE_PATH.equals(path) && key) {
                     DataMapItem dataMapItem = DataMapItem.fromDataItem(event.getDataItem());
-                    Asset photoAsset =
+                    Asset modelAsset =
                             dataMapItem.getDataMap().getAsset(DataLayerListenerService.MODEL_KEY);
                     // Loads image on background thread.
-                    new LoadBitmapAsyncTask().execute(photoAsset);
-                } else {
+                    new LoadBitmapAsyncTask().execute(modelAsset);
+                } else if (DataLayerListenerService.COUNT_PATH.equals(path)) {
+                    Log.d(TAG, "Data Changed for COUNT_PATH");
+                } else if (event.getDataItem().getAssets().containsKey(DATA_KEY)){
+                    Log.d(TAG, "It's the datafile");
+                }
+                else {
                     Log.d(TAG, "Unrecognized path: " + path);
+
                 }
 
             } else {
@@ -575,9 +594,84 @@ public class MainActivity extends FragmentActivity
         }
     }
     @Override
-    public void onMessageReceived(@NonNull MessageEvent event) {
-        Log.d(TAG, "onMessageReceived: " + event);
+    public void onMessageReceived(@NonNull MessageEvent messageEvent) {
+        Log.d(TAG, "onMessageReceived: " + messageEvent);
+        Log.d(
+                TAG, "onMessageReceived() A message from watch was received:"
+                        + messageEvent.getRequestId()
+                        + " "
+                        + messageEvent.getPath()
+        );
     }
+
+    private static Asset toAsset(File file) {
+        java.io.FileInputStream is = null;
+        byte[] bFile = new byte[(int) file.length()];
+        try {
+            is = new java.io.FileInputStream(file);
+            is.read(bFile);
+            is.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        Asset asset = Asset.createFromBytes(bFile);
+        return asset;
+    }
+
+    private void sendData(Asset asset) {
+        com.google.android.gms.wearable.PutDataMapRequest dataMap = com.google.android.gms.wearable.PutDataMapRequest.create(FILE_PATH);
+        dataMap.getDataMap().putAsset(DATA_KEY, asset);
+        dataMap.getDataMap().putLong("time", new java.util.Date().getTime());
+        com.google.android.gms.wearable.PutDataRequest request = dataMap.asPutDataRequest();
+        request.setUrgent();
+
+        Task<com.google.android.gms.wearable.DataItem> dataItemTask = Wearable.getDataClient(this).putDataItem(request);
+
+        dataItemTask.addOnSuccessListener(
+                new OnSuccessListener<com.google.android.gms.wearable.DataItem>() {
+                    @Override
+                    public void onSuccess(com.google.android.gms.wearable.DataItem dataItem) {
+                        Log.d(TAG, "Sending image was successful: " + dataItem);
+                    }
+                });
+    }
+
+    private class DataItemGenerator implements Runnable {
+
+        private int count = 0;
+
+        @Override
+        public void run() {
+            com.google.android.gms.wearable.PutDataMapRequest putDataMapRequest = com.google.android.gms.wearable.PutDataMapRequest.create(COUNT_PATH);
+            putDataMapRequest.getDataMap().putInt(COUNT_KEY, count++);
+
+            com.google.android.gms.wearable.PutDataRequest request = putDataMapRequest.asPutDataRequest();
+            request.setUrgent();
+
+            Log.d(TAG, "Generating DataItem: " + request);
+
+            Task<com.google.android.gms.wearable.DataItem> dataItemTask =
+                    Wearable.getDataClient(getApplicationContext()).putDataItem(request);
+
+            try {
+                // Block on a task and get the result synchronously (because this is on a background
+                // thread).
+                com.google.android.gms.wearable.DataItem dataItem = Tasks.await(dataItemTask);
+
+                Log.d(TAG, "DataItem saved: " + dataItem);
+
+            } catch (ExecutionException exception) {
+                Log.e(TAG, "Task failed: " + exception);
+
+            } catch (InterruptedException exception) {
+                Log.e(TAG, "Interrupt occurred: " + exception);
+            }
+        }
+    }
+
 
     @Override
     public void onCapabilityChanged(CapabilityInfo capabilityInfo) {
@@ -611,6 +705,7 @@ public class MainActivity extends FragmentActivity
                     }
                 });
     }
+
 
     private void showDiscoveredNodes(Set<Node> nodes) {
         List<String> nodesList = new ArrayList<>();
@@ -655,7 +750,7 @@ public class MainActivity extends FragmentActivity
                     InputStream assetInputStream = getFdForAssetResponse.getInputStream();
 
                     if (assetInputStream != null) {
-                        File dir = new File(getFilesDir(),"model");
+                        File dir = new File(getFilesDir(),"sync");
                         if (!dir.exists()){
                             dir.mkdir();
                         }

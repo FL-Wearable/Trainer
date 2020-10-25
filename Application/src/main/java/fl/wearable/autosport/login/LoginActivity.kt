@@ -6,12 +6,7 @@ import android.net.Uri
 import android.os.AsyncTask
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
-import android.widget.ArrayAdapter
-import android.widget.ListView
 import android.widget.TextView
 import androidx.annotation.WorkerThread
 import androidx.appcompat.app.AppCompatActivity
@@ -24,6 +19,7 @@ import com.google.android.gms.wearable.CapabilityInfo
 import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
+import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.PutDataMapRequest
@@ -31,10 +27,11 @@ import com.google.android.gms.wearable.Wearable
 import fl.wearable.autosport.R
 import fl.wearable.autosport.databinding.ActivityLoginBinding
 import fl.wearable.autosport.federated.ui.main.MainActivity
-import fl.wearable.autosport.sync.UpdateModel
+import fl.wearable.autosport.sync.DataLayerListenerService
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
+import java.io.FileOutputStream
 import java.io.IOException
 import java.util.Date
 import java.util.HashSet
@@ -52,14 +49,17 @@ class LoginActivity : AppCompatActivity(),
                         DataClient.OnDataChangedListener,
                         MessageClient.OnMessageReceivedListener,
                         CapabilityClient.OnCapabilityChangedListener {
-    private val MODEL_KEY: String = "checkpoint"
-    private val MODEL_PATH: String = "/model"
+
     private lateinit var loginViewModel: LoginViewModel
     private lateinit var binding: ActivityLoginBinding
+
+    // for transmissions
+    private val MODEL_KEY: String = "checkpoint"
+    private val FILE_PATH: String = "/sync"
     private var mGeneratorExecutor: ScheduledExecutorService? = null
     private var mDataItemGeneratorFuture: ScheduledFuture<*>? = null
-    private var mDataItemListAdapter: DataItemAdapter? = null
-    private val mDataItemList: ListView? = null
+    //private var mDataItemListAdapter: DataItemAdapter? = null
+    //private val mDataItemList: ListView? = null
 
 
     init {
@@ -98,15 +98,16 @@ class LoginActivity : AppCompatActivity(),
             }
         }
 
+        // ------ send ------------
         binding.startWearable.setOnClickListener {
             Log.d(TAG, "Generating RPC")
 
             StartWearableActivityTask().execute()
         }
 
-
+        // for transmissions
         binding.send.setOnClickListener {
-            val dir = File(filesDir, "model")
+            val dir = File(filesDir, "sync")
             if (!dir.exists()) {
                 Log.d(TAG, "dir doesn't exist, create it now")
                 dir.mkdir()
@@ -115,16 +116,20 @@ class LoginActivity : AppCompatActivity(),
             if (!modelFile.exists()) {
                 Log.d(TAG, "no model")
             }
-            toAsset(modelFile)?.let { it1 -> sendPhoto(it1) }
+            toAsset(modelFile)?.let { it1 -> sendModel(it1) }
 
-            val modelfile = File("${this.filesDir}/models", "model.pb")
+            /*val modelfile = File("${this.filesDir}/sync", "model.pt")
             val updateModel = object : UpdateModel() {
                 override fun onPostExecute(bool: Boolean?) {
                     super.onPostExecute(bool)
                 }
             }
-            updateModel.execute(modelfile)
+            updateModel.execute(modelfile)*/
         }
+
+        mGeneratorExecutor = ScheduledThreadPoolExecutor(1)
+
+        // ------ send ------------
 
         binding.url.setOnEditorActionListener { _, actionId, _ ->
             return@setOnEditorActionListener when (actionId) {
@@ -136,25 +141,20 @@ class LoginActivity : AppCompatActivity(),
             }
         }
 
-        // Stores DataItems received by the local broadcaster or from the paired watch.
-        mDataItemListAdapter = DataItemAdapter(this, android.R.layout.simple_list_item_1)
-        mDataItemList?.adapter = mDataItemListAdapter
-        mGeneratorExecutor = ScheduledThreadPoolExecutor(1)
+
     }
 
+    // ------ send/rec ------------
     override fun onResume() {
         super.onResume()
         mDataItemGeneratorFuture =
                 mGeneratorExecutor!!.scheduleWithFixedDelay(
                     DataItemGenerator(), 1, 5, TimeUnit.SECONDS
                 )
-
         Wearable.getDataClient(this).addListener(this)
         Wearable.getMessageClient(this).addListener(this)
         Wearable.getCapabilityClient(this)
                 .addListener(this, Uri.parse("wear://"), CapabilityClient.FILTER_REACHABLE)
-
-
     }
 
     override fun onPause() {
@@ -166,39 +166,51 @@ class LoginActivity : AppCompatActivity(),
     }
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
+        // ------ send ------------
         Log.d(TAG, "onDataChanged: $dataEvents")
+        // ------ send ------------
+
         for (event in dataEvents) {
             if (event.type == DataEvent.TYPE_CHANGED) {
-                mDataItemListAdapter!!.add(
-                    Event("DataItem Changed", event.dataItem.toString())
-                )
-            } else if (event.type == DataEvent.TYPE_DELETED) {
-                mDataItemListAdapter!!.add(
-                    Event("DataItem Deleted", event.dataItem.toString())
-                )
+                val path = event.dataItem.uri.path
+                val key = DataMapItem.fromDataItem(event.dataItem).dataMap.containsKey(DataLayerListenerService.DATA_KEY)
+                if (DataLayerListenerService.FILE_PATH.equals(path) && key) {
+                    val dataMapItem = DataMapItem.fromDataItem(event.dataItem)
+                    val photoAsset =
+                            dataMapItem.dataMap.getAsset(DataLayerListenerService.DATA_KEY)
+                    // Loads image on background thread.
+                    LoadBitmapAsyncTask().execute(photoAsset)
+                } else if (event.dataItem.assets.containsKey(MODEL_KEY)) {
+                    Log.d(TAG, "It's the model")
+                } else if (DataLayerListenerService.COUNT_PATH.equals(path)) {
+                    Log.d(TAG, "Data Changed for COUNT_PATH")
+                } else {
+                    Log.d(TAG, "Unrecognized path: $path")
+                }
             }
         }
+
     }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
+        // ------ send ------------
         Log.d(
             TAG, "onMessageReceived() A message from watch was received:"
-                 + messageEvent.requestId
-                 + " "
-                 + messageEvent.path
+                 + messageEvent
         )
-        mDataItemListAdapter!!.add(
+        // ------ send ------------
+        /*mDataItemListAdapter!!.add(
             Event("Message from watch", messageEvent.toString())
-        )
+        )*/
     }
 
     override fun onCapabilityChanged(capabilityInfo: CapabilityInfo) {
-        Log.d(TAG,"onCapabilityChanged: $capabilityInfo")
-        mDataItemListAdapter!!.add(
-            Event("onCapabilityChanged", capabilityInfo.toString())
-        )
+        Log.d(TAG, "onCapabilityChanged:" + capabilityInfo);
     }
+    // ------ send/rec ------------
 
+    // ------ send ------------
+    // for transmissions
     private fun toAsset(file: File): Asset? {
         var `is`: FileInputStream? = null
         val bFile = ByteArray(file.length().toInt())
@@ -214,19 +226,21 @@ class LoginActivity : AppCompatActivity(),
         return Asset.createFromBytes(bFile)
     }
 
-    private fun sendPhoto(asset: Asset) {
+    // for transmissions
+    private fun sendModel(asset: Asset) {
         val dataMap =
-                PutDataMapRequest.create(MODEL_PATH)
+                PutDataMapRequest.create(FILE_PATH)
         dataMap.dataMap.putAsset(MODEL_KEY, asset)
         dataMap.dataMap.putLong("time", Date().time)
         val request = dataMap.asPutDataRequest()
         request.setUrgent()
         val dataItemTask = Wearable.getDataClient(this).putDataItem(request)
         dataItemTask.addOnSuccessListener { dataItem ->
-            Log.d(TAG, "Sending image was successful: $dataItem")
+            Log.d(TAG, "Sending model was successful: $dataItem")
         }
     }
 
+    // for transmissions
     private class DataItemGenerator : Runnable {
         private val COUNT_KEY: String = "count"
         private val COUNT_PATH: String = "/count"
@@ -248,36 +262,6 @@ class LoginActivity : AppCompatActivity(),
             }
         }
     }
-
-    /** A View Adapter for presenting the Event objects in a list  */
-    private class DataItemAdapter(private val mContext: Context, unusedResource: Int) :
-        ArrayAdapter<Event?>(mContext, unusedResource) {
-        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-            var convertView = convertView
-            val holder: ViewHolder
-            if (convertView == null) {
-                holder = ViewHolder()
-                val inflater = mContext.getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
-                convertView = inflater.inflate(android.R.layout.two_line_list_item, null)
-                convertView.tag = holder
-                holder.text1 = convertView.findViewById<View>(android.R.id.text1) as TextView
-                holder.text2 = convertView.findViewById<View>(android.R.id.text2) as TextView
-            } else {
-                holder = convertView.tag as ViewHolder
-            }
-            val event: Event? = getItem(position)
-            holder.text1!!.setText(event!!.title)
-            holder.text2!!.setText(event!!.text)
-            return convertView!!
-        }
-
-        private inner class ViewHolder {
-            var text1: TextView? = null
-            var text2: TextView? = null
-        }
-    }
-
-    private class Event(var title: String, var text: String)
 
     private class StartWearableActivityTask : AsyncTask<Void?, Void?, Void?>() {
         private val START_ACTIVITY_PATH: String ="/start-activity"
@@ -323,6 +307,72 @@ class LoginActivity : AppCompatActivity(),
             }
         }
     }
+    // ------ send ------------
+
+    // ------ rec ------------
+    private class LoadBitmapAsyncTask :
+        AsyncTask<Asset?, Void?, Boolean?>() {
+         override fun doInBackground(vararg params: Asset?): Boolean? {
+                 return if (params.size > 0) {
+                val asset = params[0]
+                val getFdForAssetResponseTask =
+                        asset?.let { Wearable.getDataClient(applicationContext()).getFdForAsset(it) }
+                try {
+                    val getFdForAssetResponse = getFdForAssetResponseTask?.let { Tasks.await(it) }
+                    val assetInputStream = getFdForAssetResponse?.inputStream
+                    if (assetInputStream != null) {
+                        val dir = File(applicationContext().filesDir, "sync")
+                        if (!dir.exists()) {
+                            dir.mkdir()
+                        }
+                        val modelFile = File(dir, "data.cav")
+                        try {
+                            FileOutputStream(modelFile, true).use { fos ->
+                                val buffer = ByteArray(8 * 1024)
+                                var read: Int
+                                while (assetInputStream.read(buffer).also { read = it } != -1) {
+                                    fos.write(buffer, 0, read)
+                                }
+                                fos.flush()
+                                Log.d(TAG, "file saved")
+                                return true
+                            }
+                        } catch (e: FileNotFoundException) {
+                            e.printStackTrace()
+                        } catch (e: IOException) {
+                            e.printStackTrace()
+                        } finally {
+                            try {
+                                assetInputStream.close()
+                            } catch (e: IOException) {
+                                e.printStackTrace()
+                            }
+                        }
+                        false
+                    } else {
+                        Log.w(TAG, "Requested an unknown Asset.")
+                        null
+                    }
+                } catch (exception: ExecutionException) {
+                    Log.e(TAG, "Failed retrieving asset, Task failed: $exception")
+                    null
+                } catch (exception: InterruptedException) {
+                    Log.e(TAG, "Failed retrieving asset, interrupt occurred: $exception")
+                    null
+                }
+            } else {
+                Log.e(TAG, "Asset must be non-null")
+                null
+            }
+        }
+
+        override fun onPostExecute(b: Boolean?) {
+            if (b!!) {
+                Log.d(TAG, "received file.")
+            }
+        }
+    }
+
 
 
 }

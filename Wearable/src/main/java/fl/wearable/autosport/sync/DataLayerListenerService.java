@@ -37,7 +37,7 @@ public class DataLayerListenerService extends WearableListenerService {
     private static final String START_ACTIVITY_PATH = "/start-activity";
     private static final String DATA_ITEM_RECEIVED_PATH = "/data-item-received";
     public static final String COUNT_PATH = "/count";
-    public static final String MODEL_PATH = "/model";
+    public static final String FILE_PATH = "/sync";
     public static final String MODEL_KEY = "checkpoint";
 
     @Override

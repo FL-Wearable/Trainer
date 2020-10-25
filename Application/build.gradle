@@ -1,0 +1,76 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
+
+android {
+    compileSdkVersion Versions.compileSdk
+    buildToolsVersion Versions.buildTools
+    defaultConfig {
+        applicationId Versions.demoAppId
+        minSdkVersion Versions.minSdk
+        targetSdkVersion Versions.targetSdk
+        versionCode Versions.appVersionCode
+        versionName Versions.appVersionName
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        Properties properties = new Properties()
+        properties.load(project.rootProject.file('Application/authentication.properties').newDataInputStream())
+        buildConfigField 'String', 'SYFT_AUTH_TOKEN', properties.getProperty('syft.authToken')
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
+    }
+
+    dataBinding {
+        enabled true
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    packagingOptions {
+        exclude 'META-INF/LICENSE.md'
+        exclude 'META-INF/LICENSE-notice.md'
+
+    }
+}
+
+dependencies {
+    implementation CommonDependencies.appCompat
+    implementation CommonDependencies.constraintLayout
+    implementation CommonDependencies.coreKtx
+    implementation CommonDependencies.kotlinSerialization
+    implementation CommonDependencies.rxJava
+    implementation CommonDependencies.rxAndroid
+
+    implementation DemoAppDependencies.mpAndroidChart
+    implementation DemoAppDependencies.materialAndroid
+    implementation DemoAppDependencies.kotlinJDK
+    implementation DemoAppDependencies.workKtx
+    implementation DemoAppDependencies.workGCM
+    implementation DemoAppDependencies.workRX
+    implementation DemoAppDependencies.coroutines
+    implementation DemoAppDependencies.lifecycle
+    implementation DemoAppDependencies.lifeCycleProcess
+    implementation 'com.google.android.gms:play-services-wearable:17.0.0'
+    wearApp project(':Wearable')
+
+    // TODO During the first stages of the project, include the library here. Later on we should use the library from the repository
+    implementation project(path: ':syftlib')
+//    implementation 'org.openmined.kotlinsyft:syftlib:0.2.0'
+
+    implementation SyftlibDependencies.pytorchAndroid
+    implementation SyftlibDependencies.torchVisionAndroid
+
+    androidTestImplementation DemoAppDependencies.workTest
+    androidTestImplementation CommonDependencies.adxExtJunit
+    androidTestImplementation CommonDependencies.espresso
+}

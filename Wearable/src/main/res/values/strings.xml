@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">Wearable</string>
+    <string name="start_sport">Start</string>
+    <string name="stop_sport">Stop</string>
+    <string name="main_empty">--:--</string>
+    <string name="title_main_activity">Wearable</string>
+    <string name="no_accuracy">--</string>
+    <string name="no_speed">-- km/h</string>
+    <string name="option_heart_rate">Heart Rate</string>
+    <string name="option_geo_location">Geo Location</string>
+    <string name="option_accelerator">Accelerator</string>
+    <string name="option_gyroscope">Gyroscope</string>
+    <string name="option_keep_on">Display On</string>
+    <string name="option_geo_always_on">GNSS Always On</string>
+    <string name="clear">Clear History</string>
+    <string name="send">Sync up</string>
+    <string name="refresh_devices">refresh devices</string>
+    <string name="run">run as server</string>
+    <string name="delete_all_confirmation">Remove history?</string>
+    <string name="no_valid_file">No file to send.</string>
+    <string name="unknown_type">Unknown data event type</string>
+    <string name="no_device">No device provides the requested capabilities</string>
+    <string name="connected_nodes">Nodes: %1$s</string>
+    <string name="capability_2_notification">Capability 2</string>
+    <string name="capabilities_1_and_2_notification">Capabilities 1 and 2</string>
+</resources>

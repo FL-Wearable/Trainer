@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+android:orientation="vertical"
+android:layout_width="match_parent"
+android:layout_height="match_parent">
+
+<View
+    android:layout_width="match_parent"
+    android:layout_height="1dp"
+    android:id="@+id/center"
+    android:visibility="invisible"
+    android:layout_centerVertical="true" />
+
+<!-- Method triggered directly in MainActivity.java (onCapabilityDiscoveryButtonClicked()),
+     not in CustomRecyclerAdapter.java. -->
+<Button
+    android:id="@+id/capability_2_btn"
+    android:text="@string/capability_2_notification"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_above="@id/center"
+    android:layout_centerHorizontal="true"
+    android:textSize="12sp"
+    android:onClick="onCapabilityDiscoveryButtonClicked" />
+
+<!-- Method triggered directly in MainActivity.java (onCapabilityDiscoveryButtonClicked()),
+     not in CustomRecyclerAdapter.java. -->
+<Button
+    android:id="@+id/capabilities_1_and_2_btn"
+    android:text="@string/capabilities_1_and_2_notification"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_below="@+id/center"
+    android:textSize="12sp"
+    android:layout_alignEnd="@+id/capability_2_btn"
+    android:layout_alignStart="@+id/capability_2_btn"
+    android:onClick="onCapabilityDiscoveryButtonClicked" />
+
+</RelativeLayout>

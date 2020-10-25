@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.wear.widget.BoxInsetLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/dark_grey"
+    android:padding="@dimen/box_inset_layout_padding"
+    tools:context="fl.wearable.autosport.MainActivity"
+    tools:deviceIds="wear">
+
+    <fl.wearable.autosport.lib.MeterView
+        android:id="@+id/meterView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/inner_frame_layout_padding"
+        android:stretchColumns="1"
+        app:boxedEdges="all"
+        tools:context="fl.wearable.autosport.MainActivity">
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <ToggleButton
+                android:id="@+id/startStopButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:layout_span="2"
+                android:backgroundTint="@color/toggle_buttons"
+                android:drawableLeft="@android:drawable/ic_lock_power_off"
+                android:enabled="false"
+                android:onClick="onStartStopSport"
+                android:textOff="@string/start_sport"
+                android:textOn="@string/stop_sport" />
+
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <ImageView
+                android:id="@+id/geoAvailabilityImageView"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_column="0"
+                android:layout_gravity="center_vertical"
+                android:layout_span="1"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:src="@android:drawable/ic_menu_mylocation" />
+
+            <TextView
+                android:id="@+id/bigDisplayText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:layout_span="1"
+                android:layout_weight="3"
+                android:text="@string/main_empty"
+                android:textAlignment="center"
+                android:textSize="30dp"
+                android:textStyle="bold" />
+
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <fl.wearable.autosport.XYGraphView
+                android:id="@+id/XYGraphView2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:layout_span="2" />
+        </TableRow>
+
+    </TableLayout>
+
+</androidx.wear.widget.BoxInsetLayout>

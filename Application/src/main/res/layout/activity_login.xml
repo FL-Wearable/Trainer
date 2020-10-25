@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+        <variable
+            name="viewModel"
+            type="fl.wearable.autosport.login.LoginViewModel" />
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".login.LoginActivity">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/white"
+            android:gravity="center_horizontal|center_vertical"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/imageHolder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:orientation="horizontal"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <ImageView
+                    android:id="@+id/image"
+                    android:layout_width="155dp"
+                    android:layout_height="155dp"
+                    app:srcCompat="@mipmap/gym" />
+
+            </LinearLayout>
+
+            <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="50dp"
+                android:layout_centerInParent="true"
+                app:layout_constraintTop_toBottomOf="@+id/inputContainer">
+
+                <TextView
+                    android:id="@+id/userMsg"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/enter_url"
+                    android:textSize="18sp" />
+
+                <TextView
+                    android:id="@+id/error"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_above="@+id/url"
+                    android:layout_below="@id/userMsg"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="20dp"
+                    android:visibility="gone"
+                    android:textColor="@color/colorAccent"/>
+
+                <EditText
+                    android:id="@+id/url"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/userMsg"
+                    android:layout_alignStart="@+id/userMsg"
+                    android:layout_alignEnd="@+id/userMsg"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="20dp"
+                    android:backgroundTint="@color/colorAccent"
+                    android:imeOptions="actionDone"
+                    android:singleLine="true"
+                    android:textAlignment="viewStart"
+                    android:textSize="18sp" />
+
+
+                <Button
+                    android:id="@+id/button"
+                    android:layout_width="160dp"
+                    android:layout_height="40dp"
+                    android:layout_below="@+id/url"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="20dp"
+                    android:layout_centerInParent="true"
+                    android:background="@drawable/button_gradient"
+                    android:fadingEdge="horizontal|vertical"
+                    android:text="@string/submit"
+                    android:textAlignment="center"
+                    android:textAllCaps="true"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    tools:layout_editor_absoluteX="161dp"
+                    tools:layout_editor_absoluteY="478dp" />
+
+                <Button
+                    android:id="@+id/send"
+                    android:layout_below="@+id/button"
+                    android:layout_centerInParent="true"
+                    android:layout_width="160dp"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="10dp"
+                    android:background="@drawable/button_gradient"
+                    android:fadingEdge="horizontal|vertical"
+                    android:text="@string/send"
+                    android:textAllCaps="true"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold"/>
+
+                <Button
+                    android:id="@+id/start_wearable"
+                    android:layout_below="@+id/send"
+                    android:layout_centerInParent="true"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="10dp"
+                    android:layout_width="160dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/button_gradient"
+                    android:fadingEdge="horizontal|vertical"
+                    android:text="@string/start_wearable"
+                    android:textAllCaps="true"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold"/>
+            </RelativeLayout>
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

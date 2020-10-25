@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.wear.widget.BoxInsetLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:boxedEdges="all">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:boxedEdges="all">
+
+            <Switch
+                android:id="@+id/switchHeartRate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="@string/option_heart_rate" />
+
+            <Switch
+                android:id="@+id/switchGeoLocation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="@string/option_geo_location" />
+
+            <Switch
+                android:id="@+id/switchGeoAlwaysOn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:enabled="false"
+                android:text="@string/option_geo_always_on" />
+
+            <Switch
+                android:id="@+id/switchAccelerator"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/option_accelerator" />
+
+            <Switch
+                android:id="@+id/switchGyroscope"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/option_gyroscope" />
+
+            <Switch
+                android:id="@+id/switchDisplayOn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/option_keep_on" />
+
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.wear.widget.BoxInsetLayout>

@@ -1,11 +1,11 @@
 object Versions {
     // App versioning
-    const val demoAppId = "org.openmined.syft.demo"
+    const val demoAppId = "fl.wearable.autosport"
     const val appVersionCode = 1
     const val appVersionName = "1.0"
 
     const val compileSdk = 29
-    const val minSdk = 24
+    const val minSdk = 26
     const val targetSdk = 29
 
     const val gradle = "3.6.0"

@@ -6,7 +6,7 @@ import android.hardware.SensorManager;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.util.Log;
-
+import android.util.Pair;
 import fl.wearable.autosport.lib.BitUtility;
 import fl.wearable.autosport.lib.FileItem;
 import fl.wearable.autosport.lib.ISensorReadout;
@@ -25,19 +25,20 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Integer> {
+public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
     private static final String TAG = AsyncSaver.class.getSimpleName();
     private static final String COMMA_DELIMITER = ",";
     private static final String NEW_LINE_SEPARATOR = "\n";
     private static final String FILE_HEADER = "id,ax,ay,az,gx,gy,gz,mx,my,mz";
-    private final Consumer<Integer> finishedCallback;
+    private final Consumer<Pair> finishedCallback;
     private final File targetDirectory;
     private Classifier classifier;
     private String result;
     private Context mContext;
     private float[] tmp;
 
-    public AsyncSaver(Consumer<Integer> finishedCallback, File targetDirectory, Context context) {
+
+    public AsyncSaver(Consumer<Pair> finishedCallback, File targetDirectory, Context context) {
         this.finishedCallback = finishedCallback;
         this.targetDirectory = targetDirectory;
         mContext = context;
@@ -45,12 +46,13 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Integer> {
     }
 
     @Override
-    protected Integer doInBackground(ISensorReadout... iSensorReadouts) {
+    protected Pair doInBackground(ISensorReadout... iSensorReadouts) {
         if (iSensorReadouts == null || iSensorReadouts.length == 0) {
-            return 0;
+            return new Pair(0,0);
         }
 
         int succeeded = 0;
+        int inferenceResult = 0;
         FileWriter fw = null;
         for (ISensorReadout sensorReadout : iSensorReadouts) {
             List<? extends HeartRateSensorData> heartRateSensorData = sensorReadout.getHeartRateData();
@@ -139,7 +141,7 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Integer> {
                 fw.append(FILE_HEADER);
                 fw.append(NEW_LINE_SEPARATOR);
                 // store individual events
-                // TODO: classifier
+                // TODO: improve classifier with periodical summarized result
                 for (int i = 0; i < len; i++) {
                     if (i < acceleratorSensorData.size()) {
                         fw.append(String.valueOf(acceleratorSensorData.get(i).getAcceleration()[0]));
@@ -164,10 +166,12 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Integer> {
                     //Log.d(TAG,"result is " + result);
                     fw.append(result);
                     fw.append(NEW_LINE_SEPARATOR);
+                    // TODO: summarize the inference result in the end
+                    inferenceResult = inferenceResult;
                 }
                 //fw.close();
                 //fw.flush();
-                succeeded++;
+                succeeded+=1;
             } catch (Exception ex) {
                 Log.e(TAG, "Failed to write data file " + ex.getClass().getSimpleName() + " " + ex.getMessage());
                 System.out.println(ex);
@@ -179,13 +183,16 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Integer> {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return succeeded;
+
+        Pair pair = new Pair(inferenceResult,succeeded);
+
+        return pair;
     }
 
     @Override
-    protected void onPostExecute(Integer integer) {
+    protected void onPostExecute(Pair pair) {
         if (this.finishedCallback != null) {
-            this.finishedCallback.accept(integer);
+            this.finishedCallback.accept(pair);
         }
     }
 }

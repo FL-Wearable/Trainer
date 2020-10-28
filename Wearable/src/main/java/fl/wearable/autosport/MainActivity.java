@@ -29,7 +29,7 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
-
+import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -52,6 +52,7 @@ import fl.wearable.autosport.lib.SensorCollector;
 import fl.wearable.autosport.sensors.HeartRateSensorData;
 import fl.wearable.autosport.sync.AsyncSaver;
 import fl.wearable.autosport.sync.DataLayerListenerService;
+import fl.wearable.autosport.menu.CenterActivity;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -100,6 +101,7 @@ public class MainActivity extends FragmentActivity
     private static final String PREFERENCES_GYROSCOPE_SENSOR = "gyroscope_sensor";
     private static final String PREFERENCES_GEO_ALWAYS_ON = "geo_always_on";
     private static final String PREFERENCES_DISPLAY_ALWAYS_ON = "display_always_on";
+    private Integer inferenceResult;
 
     // for transmissions
     private static final String CAPABILITY_1_NAME = "capability_1";
@@ -113,6 +115,7 @@ public class MainActivity extends FragmentActivity
 
     private final Collection<HeartRateSensorData> heartRateData = new ArrayList<>();
     private Intent sensorCollectorIntent;
+    private Intent menuActivityIntent;
     private ViewPager mPager;
     private PagerAdapter pagerAdapter;
     private View mMainView;
@@ -212,6 +215,7 @@ public class MainActivity extends FragmentActivity
         setContentView(R.layout.activity_screen_slide);
 
         sensorCollectorIntent = new Intent(this, SensorCollector.class);
+        menuActivityIntent = new Intent(this, CenterActivity.class);
 
         mMainView = getLayoutInflater().inflate(R.layout.main, null);
         mStartStopButton = mMainView.findViewById(R.id.startStopButton);
@@ -427,6 +431,7 @@ public class MainActivity extends FragmentActivity
         }
     }
 
+
     /**
      * On start stop sport.
      *
@@ -515,19 +520,23 @@ public class MainActivity extends FragmentActivity
             stopService(sensorCollectorIntent);
 
             // todo
-            new AsyncSaver(new Consumer<Integer>() {
+            new AsyncSaver(new Consumer<Pair>() {
                 @Override
-                public void accept(Integer integer) {
+                public void accept(Pair pair) {
+                    inferenceResult = (Integer) pair.first;
                     updateFileList();
                     // todo: potential desync with service bind status
                     mStartStopButton.setEnabled(true);
-                    if (integer != 1) {
-                        Toast.makeText(MainActivity.this, "Save Failed!", Toast.LENGTH_SHORT).show();
+                    if ((Integer) pair.second != 1) {
+                        Toast.makeText(getApplicationContext(), "Save Failed!", Toast.LENGTH_SHORT).show();
                     }
                 }
             },
                     getFilesDir(), this).execute(mSensorReadout);
-
+            //show inference result
+            Intent showInference = new Intent(this, CenterActivity.class);
+            showInference.putExtra("inferenceResult", inferenceResult);
+            startActivity(showInference);
         }
     }
 

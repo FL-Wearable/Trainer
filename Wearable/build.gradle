@@ -32,7 +32,7 @@ dependencies {
 
     implementation 'com.google.android.support:wearable:2.8.1'
     implementation 'org.tensorflow:tensorflow-android:1.13.1'
-
+    implementation 'me.samlss:timomenu:1.0.0'
 }
 
 // The sample build uses multiple directories to

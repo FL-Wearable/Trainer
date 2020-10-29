@@ -24,6 +24,10 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.Stack;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
     private static final String TAG = AsyncSaver.class.getSimpleName();
@@ -36,6 +40,7 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
     private String result;
     private Context mContext;
     private float[] tmp;
+    private Stack<String> recent_n_result = new Stack<String>();
 
 
     public AsyncSaver(Consumer<Pair> finishedCallback, File targetDirectory, Context context) {
@@ -162,7 +167,35 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
                     //Log.d(TAG, "!!!!acc length is " + acceleratorSensorData.get(i).getAcceleration().length);
                     tmp = Arrays.copyOf(acceleratorSensorData.get(i).getAcceleration(), 6);
                     System.arraycopy(gyroscopeSensorData.get(i).getGyroscope(), 0, tmp, 3, 3);
-                    result = classifier.predict(tmp);
+                    result = classifier.predict_with_threshold(tmp, (float) 0.6);
+
+                    if (recent_n_result.size()>100){
+                        recent_n_result.pop();
+                    }
+                    recent_n_result.push(result);
+
+                    if(i % 100==0){
+                        Map<String,Integer> activity_counts = new HashMap<>();
+                        for (int j = 0; j < recent_n_result.size(); j++){
+                            if (activity_counts.containsKey(recent_n_result.get(j))) {
+                                int curVal = activity_counts.get(recent_n_result.get(j));
+                                activity_counts.put(recent_n_result.get(j),  curVal + 1);
+                            } else {
+                                activity_counts.put(recent_n_result.get(j), 0);
+                            }
+                        }
+                        int max_count=0;
+                        String predicted_sport = "";
+                        for(String activity:activity_counts.keySet()){
+                            int counts = activity_counts.get(activity);
+                            if(counts>max_count){
+                                max_count = counts;
+                                predicted_sport = activity;
+                            }
+                        }
+                        fw.append(predicted_sport);
+                    }
+
                     //Log.d(TAG,"result is " + result);
                     fw.append(result);
                     fw.append(NEW_LINE_SEPARATOR);

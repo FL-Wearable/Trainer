@@ -8,4 +8,6 @@ public class Constants {
             "jumping"
 
     };
+
+    public static String UNKNOWN = "Unknown Sports";
 }

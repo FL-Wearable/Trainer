@@ -25,6 +25,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.Stack;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.ArrayList;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,10 +40,9 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
     private final Consumer<Pair> finishedCallback;
     private final File targetDirectory;
     private Classifier classifier;
-    private String result;
     private Context mContext;
     private float[] tmp;
-    private Stack<String> recent_n_result = new Stack<String>();
+    private ArrayList<Integer> recent_n_result = new ArrayList<>();
 
 
     public AsyncSaver(Consumer<Pair> finishedCallback, File targetDirectory, Context context) {
@@ -167,15 +169,15 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
                     //Log.d(TAG, "!!!!acc length is " + acceleratorSensorData.get(i).getAcceleration().length);
                     tmp = Arrays.copyOf(acceleratorSensorData.get(i).getAcceleration(), 6);
                     System.arraycopy(gyroscopeSensorData.get(i).getGyroscope(), 0, tmp, 3, 3);
-                    result = classifier.predict_with_threshold(tmp, (float) 0.6);
+                    int result = classifier.predict_with_threshold(tmp, (float) 0.6);
 
                     if (recent_n_result.size()>100){
-                        recent_n_result.pop();
+                        recent_n_result.remove(0);
                     }
-                    recent_n_result.push(result);
+                    recent_n_result.add(result);
 
-                    if(i % 100==0){
-                        Map<String,Integer> activity_counts = new HashMap<>();
+                    if(i % 100 == 0){
+                        Map<Integer,Integer> activity_counts = new HashMap<>();
                         for (int j = 0; j < recent_n_result.size(); j++){
                             if (activity_counts.containsKey(recent_n_result.get(j))) {
                                 int curVal = activity_counts.get(recent_n_result.get(j));
@@ -185,20 +187,20 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
                             }
                         }
                         int max_count=0;
-                        String predicted_sport = "";
-                        for(String activity:activity_counts.keySet()){
+                        int predicted_sport_index = -1;
+                        for(Integer activity:activity_counts.keySet()){
                             int counts = activity_counts.get(activity);
                             if(counts>max_count){
                                 max_count = counts;
-                                predicted_sport = activity;
+                                predicted_sport_index = activity;
                             }
                         }
-                        fw.append(predicted_sport);
+                        fw.append((char) predicted_sport_index);
                     }
 
                     //Log.d(TAG,"result is " + result);
-                    fw.append(result);
-                    fw.append(NEW_LINE_SEPARATOR);
+                    //fw.append(result);
+                    //fw.append(NEW_LINE_SEPARATOR);
                     // TODO: summarize the inference result in the end
                     inferenceResult = inferenceResult;
                 }

@@ -70,7 +70,7 @@ public class Classifier {
         return max;
     }
 
-    public String predict_with_threshold(float[] features, float theta) {
+    public int predict_with_threshold(float[] features, float theta) {
         Tensor tensor = setFloatToTensor(features, featureNum);
         IValue inputs = IValue.from(tensor);
         Tensor outputs = model.forward(inputs).toTensor();
@@ -78,10 +78,10 @@ public class Classifier {
         int classIndex = argMax(probs);
         float maxProb = Max(probs);
         if(maxProb>=theta){
-            return fl.wearable.autosport.model.Constants.MLP_CLASSES[classIndex];
+            return classIndex;
         }
         else{
-            return fl.wearable.autosport.model.Constants.UNKNOWN;
+            return 3;
         }
 
     }

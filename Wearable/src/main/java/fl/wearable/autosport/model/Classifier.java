@@ -1,12 +1,14 @@
 package fl.wearable.autosport.model;
 import java.util.Arrays;
-import java.util.Collections;
-import android.graphics.Bitmap;
 
+import android.graphics.Bitmap;
+import android.util.Log;
 import org.pytorch.IValue;
 import org.pytorch.Module;
 import org.pytorch.Tensor;
 import org.pytorch.torchvision.TensorImageUtils;
+
+import static android.content.ContentValues.TAG;
 import static org.pytorch.Tensor.fromBlob;
 
 
@@ -57,7 +59,7 @@ public class Classifier {
         Tensor outputs = model.forward(inputs).toTensor();
         float[] scores = outputs.getDataAsFloatArray();
         int classIndex = argMax(scores);
-        return Constants.MLP_CLASSES[classIndex];
+        return fl.wearable.autosport.lib.Constants.MLP_CLASSES[classIndex];
     }
 
     public float Max(float[] arr){

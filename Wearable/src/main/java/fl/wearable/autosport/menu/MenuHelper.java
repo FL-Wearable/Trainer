@@ -13,17 +13,18 @@ public class MenuHelper {
 
 
     public static int ROW_TEXT[][] = {
-            {R.string.rowing, R.string.crosstrainer, R.string.jumping},
+            {R.string.crosstrainer, R.string.rowing, R.string.jumping, R.string.unknown},
     };
 
     public static List<TimoItemViewParameter> getTopList(int itemWidth){
         List<TimoItemViewParameter> listTop = new ArrayList<>();
-        TimoItemViewParameter rowing = getTimoItemViewParameter(itemWidth, R.drawable.rowing,
-                R.drawable.rowing, R.string.rowing, R.color.normal_text_color,
-                R.color.highlight_text_color);
 
         TimoItemViewParameter crosstrainer = getTimoItemViewParameter(itemWidth, R.drawable.crosstrainer,
                 R.drawable.crosstrainer, R.string.crosstrainer, R.color.normal_text_color,
+                R.color.highlight_text_color);
+
+        TimoItemViewParameter rowing = getTimoItemViewParameter(itemWidth, R.drawable.rowing,
+                R.drawable.rowing, R.string.rowing, R.color.normal_text_color,
                 R.color.highlight_text_color);
 
         TimoItemViewParameter jumping = getTimoItemViewParameter(itemWidth, fl.wearable.autosport.R.drawable.jumping,
@@ -31,9 +32,8 @@ public class MenuHelper {
                 R.color.highlight_text_color);
 
 
-
-        listTop.add(rowing);
         listTop.add(crosstrainer);
+        listTop.add(rowing);
         listTop.add(jumping);
         return listTop;
     }

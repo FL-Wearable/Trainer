@@ -468,6 +468,7 @@ public class SensorCollector extends Service implements ISensorReadout, ISensorC
             if (mAcceleratorSensor == null) {
                 Log.e(TAG, "No access to the accelerometer .");
             } else {
+                //Note that the following lines specifying the delay in microseconds only works from Android 2.3 (API level 9) onwards.
                 mSensorManager.registerListener(acceleratorListener, mAcceleratorSensor, 40000);
             }
         }

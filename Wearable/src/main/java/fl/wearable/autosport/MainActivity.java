@@ -84,6 +84,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
+import static android.content.ContentValues.TAG;
+
 /**
  * Main activity of the wearable app.
  */
@@ -102,6 +104,7 @@ public class MainActivity extends FragmentActivity
     private static final String PREFERENCES_GEO_ALWAYS_ON = "geo_always_on";
     private static final String PREFERENCES_DISPLAY_ALWAYS_ON = "display_always_on";
     private Integer inferenceResult;
+    private long fileName;
 
     // for transmissions
     private static final String CAPABILITY_1_NAME = "capability_1";
@@ -524,10 +527,11 @@ public class MainActivity extends FragmentActivity
                 @Override
                 public void accept(Pair pair) {
                     inferenceResult = (Integer) pair.first;
+                    fileName = (long) pair.second;
                     updateFileList();
                     // todo: potential desync with service bind status
                     mStartStopButton.setEnabled(true);
-                    if ((Integer) pair.second != 1) {
+                    if ( (long) pair.second == (long) 0) {
                         Toast.makeText(getApplicationContext(), "Save Failed!", Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -536,6 +540,9 @@ public class MainActivity extends FragmentActivity
             //show inference result
             Intent showInference = new Intent(this, CenterActivity.class);
             showInference.putExtra("inferenceResult", inferenceResult);
+            showInference.putExtra("filename", fileName);
+            android.util.Log.d(TAG, "currentCSVName now 1 is " + fileName);
+
             startActivity(showInference);
         }
     }

@@ -24,25 +24,22 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.Stack;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.ArrayList;
 
-import java.util.HashMap;
-import java.util.Map;
+import static fl.wearable.autosport.lib.Constants.COMMA_DELIMITER;
+import static fl.wearable.autosport.lib.Constants.FILE_HEADER;
+import static fl.wearable.autosport.lib.Constants.NEW_LINE_SEPARATOR;
 
 public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
     private static final String TAG = AsyncSaver.class.getSimpleName();
-    private static final String COMMA_DELIMITER = ",";
-    private static final String NEW_LINE_SEPARATOR = "\n";
-    private static final String FILE_HEADER = "id,ax,ay,az,gx,gy,gz,mx,my,mz";
+
     private final Consumer<Pair> finishedCallback;
     private final File targetDirectory;
     private Classifier classifier;
     private Context mContext;
     private float[] tmp;
     private ArrayList<Integer> recent_n_result = new ArrayList<>();
+    private ArrayList<Integer> inferenceResults = new ArrayList<>();
 
 
     public AsyncSaver(Consumer<Pair> finishedCallback, File targetDirectory, Context context) {
@@ -61,6 +58,7 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
         int succeeded = 0;
         int inferenceResult = 0;
         FileWriter fw = null;
+        long curentCsvName = System.currentTimeMillis();
         for (ISensorReadout sensorReadout : iSensorReadouts) {
             List<? extends HeartRateSensorData> heartRateSensorData = sensorReadout.getHeartRateData();
             List<? extends GeoLocationData> geoLocationData = sensorReadout.getGeoLocationData();
@@ -68,17 +66,18 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
             List<? extends GyroscopeSensorData> gyroscopeSensorData = sensorReadout.getGyroscopeData();
 
             Log.i(TAG, "No. of events "
-                    //+ heartRateSensorData.size() + " heart, "
+                    + heartRateSensorData.size() + " heart, "
                     + geoLocationData.size() + " geo, "
                     + acceleratorSensorData.size() + " acceleration."
                     + gyroscopeSensorData.size() + " geroscope.");
             int len = acceleratorSensorData.size();
             len = Math.min(len, gyroscopeSensorData.size());
+            //len = Math.min(len, heartRateSensorData.size());
             try {
                 //binary file for display
                 FileOutputStream fos = new FileOutputStream(new File(targetDirectory, System.currentTimeMillis() + ".trk"));
                 // csv file for inference and training
-                fw = new FileWriter(new File(targetDirectory, System.currentTimeMillis() + ".csv"));
+                fw = new FileWriter(new File(targetDirectory, curentCsvName + ".csv"));
                 fos.write(FileItem.HEADER); // header
                 fos.write(BitUtility.getBytes(FileItem.VERSION)); // version
 
@@ -144,73 +143,54 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
                 FileItem.writeField(fos, BitUtility.getBytes((short)0xffff));
                 fos.close();
                 
-                //fw.append(String.valueOf(SPORT_LABEL));
                 fw.append(FILE_HEADER);
                 fw.append(NEW_LINE_SEPARATOR);
                 // store individual events
                 // TODO: improve classifier with periodical summarized result
                 for (int i = 0; i < len; i++) {
-                    if (i < acceleratorSensorData.size()) {
-                        fw.append(String.valueOf(acceleratorSensorData.get(i).getAcceleration()[0]));
-                        fw.append(COMMA_DELIMITER);
-                        fw.append(String.valueOf(acceleratorSensorData.get(i).getAcceleration()[1]));
-                        fw.append(COMMA_DELIMITER);
-                        fw.append(String.valueOf(acceleratorSensorData.get(i).getAcceleration()[2]));
-                    }
-                    if (i < gyroscopeSensorData.size()) {
-                        fw.append(COMMA_DELIMITER);
-                        fw.append(String.valueOf(gyroscopeSensorData.get(i).getGyroscope()[0]));
-                        fw.append(COMMA_DELIMITER);
-                        fw.append(String.valueOf(gyroscopeSensorData.get(i).getGyroscope()[1]));
-                        fw.append(COMMA_DELIMITER);
-                        fw.append(String.valueOf(gyroscopeSensorData.get(i).getGyroscope()[2]));
-                        fw.append(COMMA_DELIMITER);
-                    }
-                    //Log.d(TAG, "!!!!acc length is " + acceleratorSensorData.get(i).getAcceleration().length);
+                    fw.append(String.valueOf(acceleratorSensorData.get(i).getAcceleration()[0]));
+                    fw.append(COMMA_DELIMITER);
+                    fw.append(String.valueOf(acceleratorSensorData.get(i).getAcceleration()[1]));
+                    fw.append(COMMA_DELIMITER);
+                    fw.append(String.valueOf(acceleratorSensorData.get(i).getAcceleration()[2]));
+                    fw.append(COMMA_DELIMITER);
+
+                    fw.append(String.valueOf(gyroscopeSensorData.get(i).getGyroscope()[0]));
+                    fw.append(COMMA_DELIMITER);
+                    fw.append(String.valueOf(gyroscopeSensorData.get(i).getGyroscope()[1]));
+                    fw.append(COMMA_DELIMITER);
+                    fw.append(String.valueOf(gyroscopeSensorData.get(i).getGyroscope()[2]));
+                    fw.append(COMMA_DELIMITER);
+
+                    //fw.append(String.valueOf(heartRateSensorData.get(i).getHeartRate()));
+                    //fw.append(COMMA_DELIMITER);
+
                     tmp = Arrays.copyOf(acceleratorSensorData.get(i).getAcceleration(), 6);
                     System.arraycopy(gyroscopeSensorData.get(i).getGyroscope(), 0, tmp, 3, 3);
-                    int result = classifier.predict_with_threshold(tmp, (float) 0.6);
+                    int result = classifier.predict_with_threshold(tmp, (float) 0.9);
+                    fw.append(String.valueOf(result));
+                    fw.append(NEW_LINE_SEPARATOR);
 
                     if (recent_n_result.size()>100){
-                        recent_n_result.remove(0);
+                        recent_n_result.clear();
                     }
                     recent_n_result.add(result);
 
-                    if(i % 100 == 0){
-                        Map<Integer,Integer> activity_counts = new HashMap<>();
-                        for (int j = 0; j < recent_n_result.size(); j++){
-                            if (activity_counts.containsKey(recent_n_result.get(j))) {
-                                int curVal = activity_counts.get(recent_n_result.get(j));
-                                activity_counts.put(recent_n_result.get(j),  curVal + 1);
-                            } else {
-                                activity_counts.put(recent_n_result.get(j), 0);
-                            }
-                        }
-                        int max_count=0;
-                        int predicted_sport_index = -1;
-                        for(Integer activity:activity_counts.keySet()){
-                            int counts = activity_counts.get(activity);
-                            if(counts>max_count){
-                                max_count = counts;
-                                predicted_sport_index = activity;
-                            }
-                        }
+                    if(i % 100 == 0 && i>1){
+                        int predicted_sport_index = 3;
+                        predicted_sport_index = mostFrequent(recent_n_result.toArray());
                         fw.append((char) predicted_sport_index);
+                        inferenceResults.add(predicted_sport_index);
                     }
-
-                    //Log.d(TAG,"result is " + result);
-                    //fw.append(result);
-                    //fw.append(NEW_LINE_SEPARATOR);
-                    // TODO: summarize the inference result in the end
-                    inferenceResult = inferenceResult;
                 }
-                //fw.close();
-                //fw.flush();
+                if (inferenceResults != null && inferenceResults.size()>1)
+                    inferenceResult =  mostFrequent(inferenceResults.toArray());
+                Log.d(TAG, "overall inference result is " + inferenceResult);
                 succeeded+=1;
             } catch (Exception ex) {
                 Log.e(TAG, "Failed to write data file " + ex.getClass().getSimpleName() + " " + ex.getMessage());
                 System.out.println(ex);
-                ex.printStackTrace();  // This will give line number
+                ex.printStackTrace();
             }
         }
         try {
@@ -218,8 +198,8 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        Pair pair = new Pair(inferenceResult,succeeded);
+        curentCsvName = curentCsvName * succeeded;
+        Pair pair = new Pair(inferenceResult,curentCsvName);
 
         return pair;
     }
@@ -229,5 +209,36 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
         if (this.finishedCallback != null) {
             this.finishedCallback.accept(pair);
         }
+    }
+    static int mostFrequent(Object[] arr)
+    {
+
+        Arrays.sort(arr);
+
+        int max_count = 1, res = (int) arr[0];
+        int curr_count = 1;
+
+        for (int i = 1; i < arr.length; i++)
+        {
+            if (arr[i] == arr[i - 1])
+                curr_count++;
+            else
+            {
+                if (curr_count > max_count)
+                {
+                    max_count = curr_count;
+                    res = (int) arr[i - 1];
+                }
+                curr_count = 1;
+            }
+        }
+
+        if (curr_count > max_count)
+        {
+            max_count = curr_count;
+            res = (int) arr[arr.length - 1];
+        }
+
+        return res;
     }
 }

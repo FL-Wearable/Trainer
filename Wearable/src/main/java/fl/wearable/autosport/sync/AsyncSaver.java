@@ -46,7 +46,8 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
         this.finishedCallback = finishedCallback;
         this.targetDirectory = targetDirectory;
         mContext = context;
-        classifier = new Classifier(Utils.assetFilePath(mContext,"model.pt"));
+        //classifier = new Classifier(Utils.assetFilePath(mContext,"model.pt"));
+        classifier = new Classifier(Utils.assetFilePath(mContext,"1.pb"));
     }
 
     @Override
@@ -185,6 +186,7 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
                 }
                 if (inferenceResults != null && inferenceResults.size()>1)
                     inferenceResult =  mostFrequent(inferenceResults.toArray());
+                Log.d(TAG, "inference results is " + inferenceResults);
                 Log.d(TAG, "overall inference result is " + inferenceResult);
                 succeeded+=1;
             } catch (Exception ex) {

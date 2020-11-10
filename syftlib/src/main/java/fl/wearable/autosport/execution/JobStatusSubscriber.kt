@@ -1,7 +1,12 @@
 package fl.wearable.autosport.execution
 
+import android.util.Log
+import androidx.annotation.VisibleForTesting
+import fl.wearable.autosport.datasource.JobLocalDataSource
 import fl.wearable.autosport.networking.datamodels.ClientConfig
 import fl.wearable.autosport.proto.SyftModel
+import org.openmined.syftproto.execution.v1.StateOuterClass
+import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -75,5 +80,35 @@ open class JobStatusSubscriber {
             is JobStatusMessage.JobCycleRejected -> onRejected(jobStatusMessage.timeout)
             //add all the other messages as and when needed
         }
+    }
+    fun saveModel(dir: File,
+                          model: SyftModel){
+        val modelId = model.pyGridModelId ?: throw IllegalStateException("Model id not initiated")
+        saveTorchModel(
+            "$dir/models",
+            "$modelId.pb",
+            "$modelId.pt"
+        )
+    }
+    fun saveTorchModel(parentDir: String, torchModelPath: String, fileName: String): String {
+        val parent = File(parentDir)
+        if (!parent.exists()) parent.mkdirs()
+        val file = File(parent, fileName)
+        file.createNewFile()
+        val modelpb = File(parent, torchModelPath)
+
+        val scriptModel = StateOuterClass.State.parseFrom(modelpb.readBytes())
+        Log.d("save to pt", "here2")
+        return saveTorchModel(file, scriptModel)
+    }
+
+    @ExperimentalUnsignedTypes
+    @VisibleForTesting
+    internal fun saveTorchModel(file: File, model: StateOuterClass.State): String {
+        file.outputStream().use {
+            it.write(model.toByteArray())
+        }
+        Log.d("write to pt","write finished")
+        return file.absolutePath
     }
 }

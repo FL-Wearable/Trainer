@@ -112,6 +112,7 @@ class LoginActivity : AppCompatActivity(),
                 Log.d(TAG, "dir doesn't exist, create it now")
                 dir.mkdir()
             }
+
             val modelFile = File(dir, "model.pt")
             if (!modelFile.exists()) {
                 Log.d(TAG, "no model")
@@ -325,7 +326,7 @@ class LoginActivity : AppCompatActivity(),
                         if (!dir.exists()) {
                             dir.mkdir()
                         }
-                        val modelFile = File(dir, "data.cav")
+                        val modelFile = File(dir, "data.csv")
                         try {
                             FileOutputStream(modelFile, true).use { fos ->
                                 val buffer = ByteArray(8 * 1024)

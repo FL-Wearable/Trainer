@@ -82,7 +82,10 @@ class LoginActivity : AppCompatActivity(),
             this,
             ViewModelProvider.NewInstanceFactory()
         ).get(LoginViewModel::class.java)
-
+        val dir = File(applicationContext().filesDir, "sync")
+        if (!dir.exists()) {
+            dir.mkdir()
+        }
 
         binding.button.setOnClickListener {
             val baseUrl = binding.url.text.toString()
@@ -107,13 +110,13 @@ class LoginActivity : AppCompatActivity(),
 
         // for transmissions
         binding.send.setOnClickListener {
-            val dir = File(filesDir, "sync")
+            val dir = File(filesDir, "models")
             if (!dir.exists()) {
                 Log.d(TAG, "dir doesn't exist, create it now")
                 dir.mkdir()
             }
 
-            val modelFile = File(dir, "model.pt")
+            val modelFile = File(dir, "1.pb")
             if (!modelFile.exists()) {
                 Log.d(TAG, "no model")
             }

@@ -10,22 +10,16 @@ import org.pytorch.torchvision.TensorImageUtils;
 
 import static android.content.ContentValues.TAG;
 import static org.pytorch.Tensor.fromBlob;
-import fl.wearable.autosport.proto.SyftModel;
+
 
 public class Classifier {
     final int featureNum = 6;
     Module model;
     float[] mean = {0.485f, 0.456f, 0.406f};
     float[] std = {0.229f, 0.224f, 0.225f};
-    SyftModel mmodel;
-    org.pytorch.Tensor[] modelParams;
-    org.pytorch.IValue paramIValue;
+
     public Classifier(String modelPath) {
-        Log.d(TAG, "modelpath is " + modelPath);
-        mmodel.loadModelState(modelPath);
-        modelParams = mmodel.getParamArray();
-        paramIValue = org.pytorch.IValue.listFrom(modelParams);
-        //model = Module.load(modelPath);
+        model = Module.load(modelPath);
     }
 
     public void setMeanAndStd(float[] mean, float[] std) {
@@ -81,7 +75,7 @@ public class Classifier {
     public int predict_with_threshold(float[] features, float theta) {
         Tensor tensor = setFloatToTensor(features, featureNum);
         IValue inputs = IValue.from(tensor);
-        Tensor outputs = model.forward(inputs,paramIValue).toTensor();
+        Tensor outputs = model.forward(inputs).toTensor();
         float[] probs = outputs.getDataAsFloatArray();
         int classIndex = argMax(probs);
         float maxProb = Max(probs);

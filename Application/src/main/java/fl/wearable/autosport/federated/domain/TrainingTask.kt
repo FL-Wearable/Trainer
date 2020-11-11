@@ -1,5 +1,7 @@
 package fl.wearable.autosport.federated.domain
 
+import android.content.ContentValues.TAG
+import android.util.Log
 import androidx.work.ListenableWorker.Result
 import io.reactivex.Single
 import io.reactivex.processors.PublishProcessor
@@ -15,6 +17,9 @@ import fl.wearable.autosport.proto.SyftModel
 import org.pytorch.IValue
 import org.pytorch.Tensor
 import java.util.concurrent.ConcurrentHashMap
+import com.google.gson.GsonBuilder
+import fl.wearable.autosport.login.LoginActivity
+import java.io.File
 
 @ExperimentalUnsignedTypes
 @ExperimentalStdlibApi
@@ -24,7 +29,9 @@ class TrainingTask(
     private val sportDataRepository: SportDataRepository
 ) {
     private var syftWorker: Syft? = null
-
+    val gsonPretty = GsonBuilder().setPrettyPrinting().create()
+    val file =  File(LoginActivity.applicationContext().filesDir,"tmp.json")
+    var dataTable = mutableMapOf<Int, Array<FloatArray>>()
     fun runTask(logger: ActivityLogger): Single<Result> {
         syftWorker = Syft.getInstance(configuration, authToken)
         val sportJob = syftWorker!!.newJob("smartsport", "1.0.0")
@@ -104,6 +111,42 @@ class TrainingTask(
                     val beginIndex = outputResult.size - paramSize
                     val updatedParams =
                             outputResult.slice(beginIndex until outputResult.size)
+                    var index = 0
+                    for (param in updatedParams) {
+                        var tensorTmp = param.toTensor().dataAsFloatArray
+                        var tensorShape = param.toTensor().shape()
+                        var indexRow = 0
+                        var indexCol = 0
+                        if (tensorShape.size>1) {
+                            var values = Array(tensorShape[0].toInt(),{FloatArray(tensorShape[1].toInt())})
+                            while (indexRow < tensorShape[0]){
+                                while (indexCol < tensorShape[1]){
+                                    values[indexRow][indexCol]=tensorTmp[indexRow*(tensorShape[1].toInt())+indexCol]
+                                    indexCol++
+                                }
+                                indexCol=0
+                                indexRow++
+                            }
+                            dataTable[index] = values
+                        }
+                        else{
+                            var values = Array(1,{FloatArray(tensorShape[0].toInt())})
+                            while (indexCol<tensorShape[0]){
+                                values[0][indexCol] = tensorTmp[indexCol]
+                                indexCol++
+                            }
+                            dataTable[index] = values
+
+                        }
+                        index++
+                        /*var iter = param.toTensor().dataAsFloatArray.iterator()
+                        Log.d(TAG, "the $index iter is")
+                        while (iter.hasNext()) {
+                            Log.d(TAG, iter.next().toString())
+                        }*/
+                    }
+                    var jsonData = gsonPretty.toJson(dataTable)
+                    file.writeText(jsonData)
                     model.updateModel(updatedParams)
                     result = outputResult[0].toTensor().dataAsFloatArray.last()
                 }

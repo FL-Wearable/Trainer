@@ -50,6 +50,7 @@ dependencies {
     implementation CommonDependencies.kotlinSerialization
     implementation CommonDependencies.rxJava
     implementation CommonDependencies.rxAndroid
+    implementation 'com.google.code.gson:gson:2.8.5'
 
     implementation DemoAppDependencies.mpAndroidChart
     implementation DemoAppDependencies.materialAndroid

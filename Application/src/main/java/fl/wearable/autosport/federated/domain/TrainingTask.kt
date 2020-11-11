@@ -1,6 +1,5 @@
 package fl.wearable.autosport.federated.domain
 
-import android.content.Context
 import androidx.work.ListenableWorker.Result
 import io.reactivex.Single
 import io.reactivex.processors.PublishProcessor
@@ -11,7 +10,6 @@ import fl.wearable.autosport.domain.SyftConfiguration
 import fl.wearable.autosport.execution.JobStatusSubscriber
 import fl.wearable.autosport.execution.Plan
 import fl.wearable.autosport.execution.SyftJob
-import fl.wearable.autosport.login.LoginActivity
 import fl.wearable.autosport.networking.datamodels.ClientConfig
 import fl.wearable.autosport.proto.SyftModel
 import org.pytorch.IValue
@@ -42,7 +40,6 @@ class TrainingTask(
             ) {
                 logger.postLog("Model ${model.modelName} received.\n\nStarting training process")
                 trainingProcess(sportJob, model, plans, clientConfig, logger)
-                saveModel(LoginActivity.applicationContext().filesDir,model)
             }
 
             override fun onComplete() {

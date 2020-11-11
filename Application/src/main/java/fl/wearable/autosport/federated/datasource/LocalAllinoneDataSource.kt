@@ -1,24 +1,17 @@
 package fl.wearable.autosport.federated.datasource
 
-import android.content.ContentValues.TAG
 import android.content.res.Resources
-import android.nfc.Tag
-import fl.wearable.autosport.federated.domain.Batch
-import fl.wearable.autosport.login.LoginActivity.Companion.applicationContext
-import java.io.BufferedReader
-import java.io.File
-import java.io.FileInputStream
-import java.io.InputStreamReader
-import android.util.Log
 import fl.wearable.autosport.R
+import fl.wearable.autosport.federated.domain.Batch
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 private var DATASIZE: Int? = null
 private var LABELSIZE: Int? = null
 
-@ExperimentalStdlibApi
 class LocalAllinoneDataSource constructor(
-private val resources: Resources )
-{
+    private val resources: Resources
+) {
     private var dataReader = returnDataReader()
     var numLabel = 1
 
@@ -30,7 +23,7 @@ private val resources: Resources )
 
         DATASIZE = trainInput[0].size
         LABELSIZE = labels[0].size
-        Log.d(TAG, "datasize is " + DATASIZE)
+
         val trainingData = Batch(
             trainInput.flatten().toFloatArray(),
             longArrayOf(trainInput.size.toLong(), DATASIZE!!.toLong())
@@ -68,21 +61,14 @@ private val resources: Resources )
     }
 
     private fun restartReader() {
-        //dataReader.close()
+        dataReader.close()
         dataReader = returnDataReader()
     }
 
 
     private fun returnDataReader() = BufferedReader(
         InputStreamReader(
-            //resources.openRawResource(R.raw.smalldata)
-            readFileToStream(applicationContext().filesDir, "sync", "data.csv")
+            resources.openRawResource(R.raw.p2_shuf)
         )
     )
-    private fun readFileToStream(dir: File, path: String, fileName: String): FileInputStream {
-        val dir = File(dir, path)
-        val dataFile = File(dir, fileName)
-        return dataFile.inputStream()
-
-    }
 }

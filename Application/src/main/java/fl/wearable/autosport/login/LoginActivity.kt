@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.inputmethod.EditorInfo
 import android.widget.TextView
+import android.widget.Toast
 import androidx.annotation.WorkerThread
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
@@ -82,19 +83,35 @@ class LoginActivity : AppCompatActivity(),
             this,
             ViewModelProvider.NewInstanceFactory()
         ).get(LoginViewModel::class.java)
-
+        val dir = File(filesDir, "sync")
+        if (!dir.exists()) {
+            Log.d(TAG, "dir doesn't exist, create it now")
+            dir.mkdir()
+        }
 
         binding.button.setOnClickListener {
-            val baseUrl = binding.url.text.toString()
-            val valid = loginViewModel.checkUrl(baseUrl)
-            if (valid) {
-                val intent = Intent(this, MainActivity::class.java)
-                intent.putExtra("baseURL", baseUrl)
-                intent.putExtra("authToken", loginViewModel.getAuthToken())
-                startActivity(intent)
-            } else {
-                binding.error.text = getString(R.string.error_url)
-                binding.error.visibility = TextView.VISIBLE
+            val dataFile = File(dir, "data.csv")
+            if (!dataFile.exists()) {
+                Log.d(TAG, "no data to train")
+                Toast.makeText(
+                    applicationContext,
+                    "No data to train, please sync with wearable app",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+            }
+            else {
+                val baseUrl = binding.url.text.toString()
+                val valid = loginViewModel.checkUrl(baseUrl)
+                if (valid) {
+                    val intent = Intent(this, MainActivity::class.java)
+                    intent.putExtra("baseURL", baseUrl)
+                    intent.putExtra("authToken", loginViewModel.getAuthToken())
+                    startActivity(intent)
+                } else {
+                    binding.error.text = getString(R.string.error_url)
+                    binding.error.visibility = TextView.VISIBLE
+                }
             }
         }
 
@@ -173,7 +190,9 @@ class LoginActivity : AppCompatActivity(),
         for (event in dataEvents) {
             if (event.type == DataEvent.TYPE_CHANGED) {
                 val path = event.dataItem.uri.path
-                val key = DataMapItem.fromDataItem(event.dataItem).dataMap.containsKey(DataLayerListenerService.DATA_KEY)
+                val key = DataMapItem.fromDataItem(event.dataItem).dataMap.containsKey(
+                    DataLayerListenerService.DATA_KEY
+                )
                 if (DataLayerListenerService.FILE_PATH.equals(path) && key) {
                     val dataMapItem = DataMapItem.fromDataItem(event.dataItem)
                     val photoAsset =
@@ -325,9 +344,9 @@ class LoginActivity : AppCompatActivity(),
                         if (!dir.exists()) {
                             dir.mkdir()
                         }
-                        val modelFile = File(dir, "data.cav")
+                        val dataFile = File(dir, "data.cav")
                         try {
-                            FileOutputStream(modelFile, true).use { fos ->
+                            FileOutputStream(dataFile, true).use { fos ->
                                 val buffer = ByteArray(8 * 1024)
                                 var read: Int
                                 while (assetInputStream.read(buffer).also { read = it } != -1) {

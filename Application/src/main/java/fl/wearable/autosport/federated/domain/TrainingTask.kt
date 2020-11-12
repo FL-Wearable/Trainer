@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap
 import com.google.gson.GsonBuilder
 import fl.wearable.autosport.login.LoginActivity
 import java.io.File
+import java.util.Arrays
 
 @ExperimentalUnsignedTypes
 @ExperimentalStdlibApi
@@ -61,6 +62,7 @@ class TrainingTask(
 
             override fun onError(throwable: Throwable) {
                 logger.postLog("There was an error $throwable")
+                Log.e(TAG, throwable.toString())
                 statusPublisher.offer(Result.failure())
             }
         }
@@ -96,15 +98,37 @@ class TrainingTask(
                         longArrayOf(1)
                     )
                 )
+                val momentum = IValue.from(
+                    Tensor.fromBlob(
+                        floatArrayOf(
+                            (clientConfig.planArgs["momentum"] ?: error("momentum doesn't exist")).toFloat()
+                        ),
+                        longArrayOf(1)
+                    )
+                )
+                val small_val = IValue.from(
+                    Tensor.fromBlob(
+                        floatArrayOf(
+                            (clientConfig.planArgs["small_val"] ?: error("small_val doesn't exist")).toFloat()
+                        ),
+                        longArrayOf(1)
+                    )
+                )
+
                 val batchData =
                         sportDataRepository.loadDataBatch(batchSize)
                 val modelParams = model.paramArray ?: return
                 val paramIValue = IValue.listFrom(*modelParams)
+
                 val output = plan.execute(
                     batchData.first,
                     batchData.second,
                     batchIValue,
-                    lr, paramIValue
+                    lr,
+                    momentum,
+                    paramIValue,
+                    minusParamIValue,
+                    small_val
                 )?.toTuple()
                 output?.let { outputResult ->
                     val paramSize = model.stateTensorSize!!

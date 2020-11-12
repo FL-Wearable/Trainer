@@ -167,7 +167,7 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
 
                     tmp = Arrays.copyOf(acceleratorSensorData.get(i).getAcceleration(), 6);
                     System.arraycopy(gyroscopeSensorData.get(i).getGyroscope(), 0, tmp, 3, 3);
-                    int result = classifier.predict_with_threshold(tmp, (float) 0.9);
+                    int result = classifier.predict(tmp, (float) 0.6);
                     fw.append(String.valueOf(result));
                     fw.append(NEW_LINE_SEPARATOR);
 

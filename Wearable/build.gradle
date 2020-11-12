@@ -23,7 +23,7 @@ dependencies {
     implementation 'androidx.wear:wear:1.1.0'
     implementation 'androidx.legacy:legacy-support-v13:1.0.0'
     implementation 'androidx.fragment:fragment:1.2.5'
-
+    implementation 'com.google.code.gson:gson:2.8.5'
     implementation 'com.google.android.gms:play-services-wearable:17.0.0'
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.2'

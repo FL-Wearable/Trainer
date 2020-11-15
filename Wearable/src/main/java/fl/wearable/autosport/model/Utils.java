@@ -11,7 +11,13 @@ import java.io.OutputStream;
 
 public class Utils {
     public static String assetFilePath(Context context, String assetName) {
-        File file = new File(context.getFilesDir(), assetName);
+        File dir = new File(context.getFilesDir(),"sync");
+        if (!dir.exists()){
+            dir.mkdir();
+        }
+        File file = new File(dir, assetName);
+
+        //File file = new File(context.getFilesDir(), assetName);
 
         try (InputStream is = context.getAssets().open(assetName)) {
             try (OutputStream os = new FileOutputStream(file)) {

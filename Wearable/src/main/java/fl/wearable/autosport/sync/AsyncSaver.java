@@ -46,7 +46,19 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
         this.finishedCallback = finishedCallback;
         this.targetDirectory = targetDirectory;
         mContext = context;
-        classifier = new Classifier(Utils.assetFilePath(mContext,"model.pt"));
+        //classifier = new Classifier(Utils.assetFilePath(mContext,"model.pt"));
+        classifier = new Classifier();
+        /*File dir = new File(mContext.getFilesDir(),"sync");
+        if (!dir.exists()){
+            dir.mkdir();
+        }
+        File modelParam = new File(dir, "tmp.json");*/
+        try {
+            classifier.loadModelParameters(Utils.assetFilePath(mContext,"data.json"));
+        } catch (java.io.FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
     }
 
     @Override
@@ -167,13 +179,10 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
 
                     tmp = Arrays.copyOf(acceleratorSensorData.get(i).getAcceleration(), 6);
                     System.arraycopy(gyroscopeSensorData.get(i).getGyroscope(), 0, tmp, 3, 3);
-                    int result = classifier.predict(tmp, (float) 0.6);
+                    int result = classifier.predict(tmp, (float) 0.5);
                     fw.append(String.valueOf(result));
                     fw.append(NEW_LINE_SEPARATOR);
 
-                    if (recent_n_result.size()>100){
-                        recent_n_result.clear();
-                    }
                     recent_n_result.add(result);
 
                     if(i % 100 == 0 && i>1){
@@ -181,6 +190,7 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
                         predicted_sport_index = mostFrequent(recent_n_result.toArray());
                         fw.append((char) predicted_sport_index);
                         inferenceResults.add(predicted_sport_index);
+                        recent_n_result.clear();
                     }
                 }
                 if (inferenceResults != null && inferenceResults.size()>1)

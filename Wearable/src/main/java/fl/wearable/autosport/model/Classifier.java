@@ -9,6 +9,7 @@ import com.google.gson.GsonBuilder;
 import android.util.JsonReader;
 import java.io.FileReader;
 
+import static android.content.ContentValues.TAG;
 import static org.pytorch.Tensor.fromBlob;
 
 class Layers{
@@ -29,14 +30,14 @@ public class Classifier {
     float[] mean = {0.485f, 0.456f, 0.406f};
     float[] std = {0.229f, 0.224f, 0.225f};
 
-    public Classifier(String modelPath) {
+    /*public Classifier(String modelPath) {
         model = Module.load(modelPath);
-    }
+    }*/
 
     public void loadModelParameters(String path) throws java.io.FileNotFoundException {
         com.google.gson.Gson gson = new GsonBuilder().serializeNulls().create();
-        JsonReader reader =new JsonReader(new FileReader(path));
-        layers = gson.fromJson(String.valueOf(reader),Layers.class);
+        java.io.BufferedReader bufferedReader = new java.io.BufferedReader(new FileReader(path));
+        layers = gson.fromJson(bufferedReader,Layers.class);
         System.out.println(layers);
     }
 

@@ -1,60 +1,48 @@
 package fl.wearable.autosport.model;
 
-import android.graphics.Bitmap;
-
-import org.pytorch.Module;
-import org.pytorch.Tensor;
-import org.pytorch.torchvision.TensorImageUtils;
-import com.google.gson.GsonBuilder;
-import android.util.JsonReader;
-import java.io.FileReader;
+import android.util.Log;
+import fl.wearable.autosport.proto.SyftModel;
 
 import static android.content.ContentValues.TAG;
-import static org.pytorch.Tensor.fromBlob;
 
 class Layers{
     @com.google.gson.annotations.SerializedName(value= "0")
-    public float[][] layer0;
+    public float[][] layer0  = new float[5][6];
     @com.google.gson.annotations.SerializedName(value= "1")
-    public float[][] layer1;
+    public float[][] layer1  = new float[1][5];
     @com.google.gson.annotations.SerializedName(value= "2")
-    public float[][] layer2;
+    public float[][] layer2  = new float[3][5];
     @com.google.gson.annotations.SerializedName(value= "3")
-    public float[][] layer3;
+    public float[][] layer3  = new float[1][3];
 }
 
 public class Classifier {
-    final int featureNum = 6;
-    Module model;
+    private org.pytorch.Tensor[] modelParams;
+    private String modelpath;
     Layers layers = new Layers();
-    float[] mean = {0.485f, 0.456f, 0.406f};
-    float[] std = {0.229f, 0.224f, 0.225f};
+    SyftModel syftmodel = new fl.wearable.autosport.proto.SyftModel("watch",null,null,null);
+    public Classifier(String paramPath) {
+        this.modelpath = paramPath;
+        if (this.modelpath == null)
+            Log.d(TAG,"it is null");
+        else
+            this.syftmodel.loadModelState(this.modelpath);
+        this.modelParams = this.syftmodel.getParamArray();
+        for (int i=0; i<5; i++)
+            for (int j = 0; j < 6; j++)
+                layers.layer0[i][j] = this.modelParams[0].getDataAsFloatArray()[j % 6 + i * 6];
 
-    /*public Classifier(String modelPath) {
-        model = Module.load(modelPath);
-    }*/
+        for (int i=0; i<1; i++)
+            for (int j=0; j<5; j++)
+                layers.layer1[i][j] = this.modelParams[1].getDataAsFloatArray()[j%5 + i*5];
 
-    public void loadModelParameters(String path) throws java.io.FileNotFoundException {
-        com.google.gson.Gson gson = new GsonBuilder().serializeNulls().create();
-        java.io.BufferedReader bufferedReader = new java.io.BufferedReader(new FileReader(path));
-        layers = gson.fromJson(bufferedReader,Layers.class);
-        System.out.println(layers);
-    }
+        for (int i=0; i<3; i++)
+            for (int j=0; j<5; j++)
+                layers.layer2[i][j] = this.modelParams[2].getDataAsFloatArray()[j%5 + i*5];
 
-    public void setMeanAndStd(float[] mean, float[] std) {
-        this.mean = mean;
-        this.std = std;
-    }
-
-    public Tensor preprocess(Bitmap bitmap, int size) {
-
-        bitmap = Bitmap.createScaledBitmap(bitmap, 1, size, false);
-        return TensorImageUtils.bitmapToFloat32Tensor(bitmap, this.mean, this.std);
-    }
-
-    public Tensor setFloatToTensor(float[] features, int size) {
-        long[] sizeArr = new long[]{1, size};
-        return fromBlob(features, sizeArr);
+        for (int i=0; i<1; i++)
+            for (int j=0; j<3; j++)
+                layers.layer3[i][j] = this.modelParams[3].getDataAsFloatArray()[j%3 + i*3];
     }
 
     public int argMax(float[] inputs) {
@@ -90,12 +78,6 @@ public class Classifier {
             layers.layer3[0][i]=output_value;
         }
 
-//        Tensor tensor = setFloatToTensor(features, featureNum);
-//        IValue inputs = IValue.from(tensor);
-//        Tensor outputs = model.forward(inputs).toTensor();
-//        float[] scores = outputs.getDataAsFloatArray();
-//        int classIndex = argMax(scores);
-//        return fl.wearable.autosport.lib.Constants.MLP_CLASSES[classIndex];
         return layers.layer3[0];
     }
 
@@ -120,9 +102,11 @@ public class Classifier {
 
     public int predict(float[] features,float theta){
         float[] outputs=forward(features);
-        float[] probs=softmax(outputs);
-        int classIndex = argMax(probs);
-        float maxProb = Max(probs);
+        //Log.d(TAG, "forward results are " + outputs[0] + " " + outputs[1] + " " + outputs[2]);
+        //float[] probs=softmax(outputs);
+        //Log.d(TAG, "softmax results are " + probs[0] + " " + probs[1] + " " + probs[2]);
+        int classIndex = argMax(outputs);
+        float maxProb = Max(outputs);
         if(maxProb>=theta){
             return classIndex;
         }
@@ -131,22 +115,5 @@ public class Classifier {
         }
 
     }
-
-//    public int predict_with_threshold(float[] features, float theta) {
-//        Tensor tensor = setFloatToTensor(features, featureNum);
-//        IValue inputs = IValue.from(tensor);
-//        Tensor outputs = model.forward(inputs).toTensor();
-//        float[] probs = outputs.getDataAsFloatArray();
-//        int classIndex = argMax(probs);
-//        float maxProb = Max(probs);
-//        if(maxProb>=theta){
-//            return classIndex;
-//        }
-//        else{
-//            return 3;
-//        }
-//
-//    }
-
 
 }

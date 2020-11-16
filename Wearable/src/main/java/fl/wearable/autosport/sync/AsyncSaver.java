@@ -6,7 +6,6 @@ import android.hardware.SensorManager;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.util.Log;
-import android.util.Pair;
 import fl.wearable.autosport.lib.BitUtility;
 import fl.wearable.autosport.lib.FileItem;
 import fl.wearable.autosport.lib.ISensorReadout;
@@ -23,17 +22,16 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.ArrayList;
 
 import static fl.wearable.autosport.lib.Constants.COMMA_DELIMITER;
 import static fl.wearable.autosport.lib.Constants.FILE_HEADER;
 import static fl.wearable.autosport.lib.Constants.NEW_LINE_SEPARATOR;
+import static fl.wearable.autosport.sync.AsyncResults.getAsyncResults;
 
-public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
+public class AsyncSaver extends AsyncTask<ISensorReadout, Float, AsyncResults> {
     private static final String TAG = AsyncSaver.class.getSimpleName();
 
-    private final Consumer<Pair> finishedCallback;
     private final File targetDirectory;
     private Classifier classifier;
     private Context mContext;
@@ -41,36 +39,31 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
     private ArrayList<Integer> recent_n_result = new ArrayList<>();
     private ArrayList<Integer> inferenceResults = new ArrayList<>();
 
+    public interface AsyncResponse {
+        void processFinish(AsyncResults results);
+    }
+    public AsyncResponse delegate = null;
 
-    public AsyncSaver(Consumer<Pair> finishedCallback, File targetDirectory, Context context) {
-        this.finishedCallback = finishedCallback;
+    public AsyncSaver(File targetDirectory, Context context, AsyncResponse delegate) {
+        this.delegate = delegate;
         this.targetDirectory = targetDirectory;
         mContext = context;
-        //classifier = new Classifier(Utils.assetFilePath(mContext,"model.pt"));
-        classifier = new Classifier();
-        /*File dir = new File(mContext.getFilesDir(),"sync");
-        if (!dir.exists()){
-            dir.mkdir();
-        }
-        File modelParam = new File(dir, "tmp.json");*/
-        try {
-            classifier.loadModelParameters(Utils.assetFilePath(mContext,"data.json"));
-        } catch (java.io.FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
+        classifier = new Classifier(Utils.assetFilePath(mContext,"model.pb"));
     }
 
     @Override
-    protected Pair doInBackground(ISensorReadout... iSensorReadouts) {
+    protected AsyncResults doInBackground(ISensorReadout... iSensorReadouts) {
         if (iSensorReadouts == null || iSensorReadouts.length == 0) {
-            return new Pair(0,0);
+            return new AsyncResults(0,0, 0, 0);
         }
 
         int succeeded = 0;
         int inferenceResult = 0;
         FileWriter fw = null;
         long curentCsvName = System.currentTimeMillis();
+        long activityPeriod = 0;
+        int activityMinute = 0;
+        int activitySecond = 0;
         for (ISensorReadout sensorReadout : iSensorReadouts) {
             List<? extends HeartRateSensorData> heartRateSensorData = sensorReadout.getHeartRateData();
             List<? extends GeoLocationData> geoLocationData = sensorReadout.getGeoLocationData();
@@ -84,7 +77,7 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
                     + gyroscopeSensorData.size() + " geroscope.");
             int len = acceleratorSensorData.size();
             len = Math.min(len, gyroscopeSensorData.size());
-            //len = Math.min(len, heartRateSensorData.size());
+            int result = 3;
             try {
                 //binary file for display
                 FileOutputStream fos = new FileOutputStream(new File(targetDirectory, System.currentTimeMillis() + ".trk"));
@@ -95,6 +88,9 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
 
                 FileItem.writeField(fos, BitUtility.getBytes((short)0x1001), BitUtility.getBytes(sensorReadout.getSportActivityStartTimeRtc()));
                 FileItem.writeField(fos, BitUtility.getBytes((short)0x1002), BitUtility.getBytes(sensorReadout.getSportActivityStopTimeRtc()));
+                activityPeriod = (sensorReadout.getSportActivityStopTimeRtc() - sensorReadout.getSportActivityStartTimeRtc())/1000;
+                activityMinute = (int) (activityPeriod/60);
+                activitySecond = (int) (activityPeriod%60);
                 long startTimestampNs = sensorReadout.getSportActivityStartTimeNs();
                 FileItem.writeField(fos, BitUtility.getBytes((short)0x1003), BitUtility.getBytes(startTimestampNs));
                 long stopTimestampNs = sensorReadout.getSportActivityStopTimeNs();
@@ -155,8 +151,8 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
                 FileItem.writeField(fos, BitUtility.getBytes((short)0xffff));
                 fos.close();
                 
-                fw.append(FILE_HEADER);
-                fw.append(NEW_LINE_SEPARATOR);
+                //fw.append(FILE_HEADER);
+                //fw.append(NEW_LINE_SEPARATOR);
                 // store individual events
                 // TODO: improve classifier with periodical summarized result
                 for (int i = 0; i < len; i++) {
@@ -172,16 +168,17 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
                     fw.append(String.valueOf(gyroscopeSensorData.get(i).getGyroscope()[1]));
                     fw.append(COMMA_DELIMITER);
                     fw.append(String.valueOf(gyroscopeSensorData.get(i).getGyroscope()[2]));
-                    fw.append(COMMA_DELIMITER);
+                    //fw.append(COMMA_DELIMITER);
+                    fw.append(NEW_LINE_SEPARATOR);
 
                     //fw.append(String.valueOf(heartRateSensorData.get(i).getHeartRate()));
                     //fw.append(COMMA_DELIMITER);
 
                     tmp = Arrays.copyOf(acceleratorSensorData.get(i).getAcceleration(), 6);
                     System.arraycopy(gyroscopeSensorData.get(i).getGyroscope(), 0, tmp, 3, 3);
-                    int result = classifier.predict(tmp, (float) 0.5);
-                    fw.append(String.valueOf(result));
-                    fw.append(NEW_LINE_SEPARATOR);
+                    result = classifier.predict(tmp, (float) 0.5);
+                    //fw.append(String.valueOf(result));
+                    //fw.append(NEW_LINE_SEPARATOR);
 
                     recent_n_result.add(result);
 
@@ -195,7 +192,6 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
                 }
                 if (inferenceResults != null && inferenceResults.size()>1)
                     inferenceResult =  mostFrequent(inferenceResults.toArray());
-                Log.d(TAG, "overall inference result is " + inferenceResult);
                 succeeded+=1;
             } catch (Exception ex) {
                 Log.e(TAG, "Failed to write data file " + ex.getClass().getSimpleName() + " " + ex.getMessage());
@@ -209,16 +205,13 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
             e.printStackTrace();
         }
         curentCsvName = curentCsvName * succeeded;
-        Pair pair = new Pair(inferenceResult,curentCsvName);
-
-        return pair;
+        AsyncResults asyncResults = getAsyncResults(inferenceResult, curentCsvName, activityMinute, activitySecond);
+        return asyncResults;
     }
 
     @Override
-    protected void onPostExecute(Pair pair) {
-        if (this.finishedCallback != null) {
-            this.finishedCallback.accept(pair);
-        }
+    protected void onPostExecute(AsyncResults asyncResults) {
+        delegate.processFinish(asyncResults);
     }
     static int mostFrequent(Object[] arr)
     {
@@ -251,4 +244,6 @@ public class AsyncSaver extends AsyncTask<ISensorReadout, Float, Pair> {
 
         return res;
     }
+
 }
+

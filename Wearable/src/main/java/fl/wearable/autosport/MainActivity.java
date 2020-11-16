@@ -53,6 +53,7 @@ import fl.wearable.autosport.sensors.HeartRateSensorData;
 import fl.wearable.autosport.sync.AsyncSaver;
 import fl.wearable.autosport.sync.DataLayerListenerService;
 import fl.wearable.autosport.menu.CenterActivity;
+import fl.wearable.autosport.sync.AsyncResults;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -103,8 +104,10 @@ public class MainActivity extends FragmentActivity
     private static final String PREFERENCES_GYROSCOPE_SENSOR = "gyroscope_sensor";
     private static final String PREFERENCES_GEO_ALWAYS_ON = "geo_always_on";
     private static final String PREFERENCES_DISPLAY_ALWAYS_ON = "display_always_on";
-    private Integer inferenceResult;
-    private long fileName;
+    public int inferenceresult;
+    public long fileName;
+    public int activityminute;
+    public int activitysecond;
 
     // for transmissions
     private static final String CAPABILITY_1_NAME = "capability_1";
@@ -523,27 +526,33 @@ public class MainActivity extends FragmentActivity
             stopService(sensorCollectorIntent);
 
             // todo
-            new AsyncSaver(new Consumer<Pair>() {
+            AsyncSaver asyncSaver = (fl.wearable.autosport.sync.AsyncSaver) new fl.wearable.autosport.sync.AsyncSaver(getFilesDir(), this, new fl.wearable.autosport.sync.AsyncSaver.AsyncResponse() {
                 @Override
-                public void accept(Pair pair) {
-                    inferenceResult = (Integer) pair.first;
-                    fileName = (long) pair.second;
+                public void processFinish(fl.wearable.autosport.sync.AsyncResults asyncResults) {
+                    inferenceresult = (Integer) asyncResults.inferenceResult;
+                    fileName = (long) asyncResults.curentCsvName;
+                    activityminute = asyncResults.activityMinute;
+                    activitysecond = asyncResults.activitySecond;
                     updateFileList();
                     // todo: potential desync with service bind status
                     mStartStopButton.setEnabled(true);
-                    if ( (long) pair.second == (long) 0) {
-                        Toast.makeText(getApplicationContext(), "Save Failed!", Toast.LENGTH_SHORT).show();
+                    android.util.Log.d(TAG, "minute and second are " +activityminute + " " + activitysecond);
+                    if ( (long) fileName == (long) 0) {
+                        android.widget.Toast.makeText(getApplicationContext(), "Save Failed!", android.widget.Toast.LENGTH_SHORT).show();
                     }
+                    Intent showInference = new Intent(MainActivity.this, CenterActivity.class);
+                    showInference.putExtra("inferenceResult", inferenceresult);
+                    showInference.putExtra("filename", fileName);
+                    showInference.putExtra("minute", activityminute);
+                    showInference.putExtra("second", activitysecond);
+                    android.util.Log.d(TAG, "currentCSVName now 1 is " + fileName);
+                    Log.d(TAG, "time variables are " + activityminute + " " + activitysecond );
+                    startActivity(showInference);
                 }
-            },
-                    getFilesDir(), this).execute(mSensorReadout);
+            }).execute(mSensorReadout);
+            //new AsyncSaver(getFilesDir(), this).execute(mSensorReadout);
             //show inference result
-            Intent showInference = new Intent(this, CenterActivity.class);
-            showInference.putExtra("inferenceResult", inferenceResult);
-            showInference.putExtra("filename", fileName);
-            android.util.Log.d(TAG, "currentCSVName now 1 is " + fileName);
 
-            startActivity(showInference);
         }
     }
 
@@ -654,6 +663,7 @@ public class MainActivity extends FragmentActivity
                     }
                 });
     }
+
 
     private class DataItemGenerator implements Runnable {
 
@@ -770,7 +780,7 @@ public class MainActivity extends FragmentActivity
                         if (!dir.exists()){
                             dir.mkdir();
                         }
-                        File modelFile = new File(dir, "model.pt");
+                        File modelFile = new File(dir, "model.pb");
                         try (OutputStream fos = new FileOutputStream(modelFile)){
                             byte[] buffer = new byte[8 * 1024];
                             int read;

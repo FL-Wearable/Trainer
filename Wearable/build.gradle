@@ -35,6 +35,11 @@ dependencies {
     implementation 'me.samlss:timomenu:1.0.0'
 
     implementation 'io.apisense:rhino-android:1.0'
+    implementation project(path: ':syftlib')
+//    implementation 'org.openmined.kotlinsyft:syftlib:0.2.0'
+
+    implementation SyftlibDependencies.pytorchAndroid
+    implementation SyftlibDependencies.torchVisionAndroid
 }
 
 // The sample build uses multiple directories to
@@ -53,7 +58,7 @@ android {
         versionCode 1
         versionName "1.0"
 
-        minSdkVersion 24
+        minSdkVersion 26
 
         targetSdkVersion 28
 

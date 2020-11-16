@@ -27,17 +27,21 @@ public class CenterActivity extends android.app.Activity {
     private TimoMenu mTimoMenu;
     private Integer inferenceResult;
     private long fileName;
+    private int minutes;
+    private int seconds;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         inferenceResult = getIntent().getIntExtra("inferenceResult",0);
         fileName =  getIntent().getLongExtra("filename",0);
+        minutes = getIntent().getIntExtra("minute",0);
+        seconds = getIntent().getIntExtra("second", 0);
         android.util.Log.d(TAG, "currentCSVName now 2 is " + fileName);
 
         setContentView(fl.wearable.autosport.R.layout.activity_center);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             getWindow().setStatusBarColor(getResources().getColor(fl.wearable.autosport.R.color.colorPrimary));
         }
-        String result = getString(R.string.result, getString(MenuHelper.ROW_TEXT[0][inferenceResult]),0);
+        String result = getString(R.string.result, getString(MenuHelper.ROW_TEXT[0][inferenceResult]), minutes, seconds);
         android.util.Log.d(TAG, "show inference result is " + inferenceResult);
         android.widget.Button btn = (android.widget.Button) findViewById(R.id.show);
         btn.setText(result);

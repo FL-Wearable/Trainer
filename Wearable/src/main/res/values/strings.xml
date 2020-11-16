@@ -7,10 +7,10 @@
     <string name="title_main_activity">Wearable</string>
     <string name="no_accuracy">--</string>
     <string name="no_speed">-- km/h</string>
-    <string name="result">%1$s for %2$d minutes.\n Please click if correction needed.</string>
+    <string name="result">%1$s for %2$d minutes %3$d seconds.\n Please click if correction needed.</string>
     <string name="rowing">Rowing</string>
     <string name="crosstrainer">Cross trainer</string>
-    <string name="jumping">Jumping</string>
+    <string name="running">Running</string>
     <string name="unknown">Unknown</string>
     <string name="option_heart_rate">Heart Rate</string>
     <string name="option_geo_location">Geo Location</string>

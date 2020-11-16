@@ -95,7 +95,7 @@ public class Classifier {
         float factor = Max(features);
         float base = (float) (Math.pow(Math.E,features[0]-factor)+ Math.pow(Math.E,features[1]-factor)+ Math.pow(Math.E,features[2]-factor));
         for(int i =0;i<softmax_outputs.length;i++){
-            softmax_outputs[i]= (float) (Math.pow(Math.E,features[0]-factor)/base);
+            softmax_outputs[i]= (float) (Math.pow(Math.E,features[i]-factor)/base);
         }
         return softmax_outputs;
     }

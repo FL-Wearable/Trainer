@@ -20,7 +20,10 @@ import java.util.concurrent.ConcurrentHashMap
 import com.google.gson.GsonBuilder
 import fl.wearable.autosport.login.LoginActivity
 import java.io.File
+import java.lang.Double.valueOf
+//import javax.script.ScriptEngineManager
 import java.util.Arrays
+import kotlin.reflect.typeOf
 
 @ExperimentalUnsignedTypes
 @ExperimentalStdlibApi
@@ -31,8 +34,12 @@ class TrainingTask(
 ) {
     private var syftWorker: Syft? = null
     val gsonPretty = GsonBuilder().setPrettyPrinting().create()
-    val file =  File(LoginActivity.applicationContext().filesDir,"tmp.json")
+    val dir = File(LoginActivity.applicationContext().filesDir, "sync")
+    val modelFile = File(dir, "tmp.json")
     var dataTable = mutableMapOf<Int, Array<FloatArray>>()
+    // val engine = ScriptEngineManager().getEngineByExtension("kts")
+    // var minusParams = arrayOf<FloatArray>()
+    // var minusParamS = arrayOf<Tensor>()
     fun runTask(logger: ActivityLogger): Single<Result> {
         syftWorker = Syft.getInstance(configuration, authToken)
         val sportJob = syftWorker!!.newJob("smartsport", "1.0.0")
@@ -85,6 +92,11 @@ class TrainingTask(
         plans["training_plan"]?.let { plan ->
             repeat(clientConfig.properties.maxUpdates) { step ->
                 logger.postEpoch(step + 1)
+                // Log.d(TAG, "client config is " + clientConfig.planArgs.keys)
+                // var arr = clientConfig.planArgs["minus_params"]
+                // Log.d(TAG, "minus $arr type is " +  arr!!::class.qualifiedName)
+                // var arra = engine.eval(arr)
+                // Log.d(TAG, "minus $arra type is " +  arra!!::class.qualifiedName)
                 val batchSize = (clientConfig.planArgs["batch_size"]
                                  ?: error("batch_size doesn't exist")).toInt()
                 val batchIValue = IValue.from(
@@ -98,7 +110,7 @@ class TrainingTask(
                         longArrayOf(1)
                     )
                 )
-                val momentum = IValue.from(
+                /*val momentum = IValue.from(
                     Tensor.fromBlob(
                         floatArrayOf(
                             (clientConfig.planArgs["momentum"] ?: error("momentum doesn't exist")).toFloat()
@@ -114,7 +126,13 @@ class TrainingTask(
                         longArrayOf(1)
                     )
                 )
+                minusParams =
+                        (engine.eval(clientConfig.planArgs["minus_params"]) as Array<FloatArray>)
 
+
+                val minusParamS = minusParams.map { Tensor.fromBlob(it, longArrayOf(it.size.toLong())) }.toTypedArray()
+                val minusIValue = IValue.listFrom(*minusParamS)
+                Log.d(TAG, "minus_params is $minusIValue")*/
                 val batchData =
                         sportDataRepository.loadDataBatch(batchSize)
                 val modelParams = model.paramArray ?: return
@@ -125,17 +143,17 @@ class TrainingTask(
                     batchData.second,
                     batchIValue,
                     lr,
-                    momentum,
-                    paramIValue,
-                    minusParamIValue,
-                    small_val
+                    //momentum,
+                    paramIValue
+                    //minusIValue,
+                    //small_val
                 )?.toTuple()
                 output?.let { outputResult ->
                     val paramSize = model.stateTensorSize!!
                     val beginIndex = outputResult.size - paramSize
                     val updatedParams =
                             outputResult.slice(beginIndex until outputResult.size)
-                    var index = 0
+                    /*var index = 0
                     for (param in updatedParams) {
                         var tensorTmp = param.toTensor().dataAsFloatArray
                         var tensorShape = param.toTensor().shape()
@@ -170,7 +188,7 @@ class TrainingTask(
                         }*/
                     }
                     var jsonData = gsonPretty.toJson(dataTable)
-                    file.writeText(jsonData)
+                    modelFile.writeText(jsonData)*/
                     model.updateModel(updatedParams)
                     result = outputResult[0].toTensor().dataAsFloatArray.last()
                 }

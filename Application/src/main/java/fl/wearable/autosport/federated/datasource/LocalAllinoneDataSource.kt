@@ -20,7 +20,7 @@ class LocalAllinoneDataSource constructor(
     private val resources: Resources )
 {
     private var dataReader = returnDataReader()
-    var numLabel = 1
+    var numFeature = 6
 
     fun loadDataBatch(batchSize: Int): Pair<Batch, Batch> {
         val trainInput = arrayListOf<List<Float>>()
@@ -49,10 +49,10 @@ class LocalAllinoneDataSource constructor(
         val sample = readLine()
 
         trainInput.add(
-            sample.drop(numLabel).map { it.trim().toFloat() }
+            sample.take(numFeature).map { it.trim().toFloat() }
         )
         labels.add(
-            sample.take(numLabel).map { it.trim().toFloat() }
+            sample.drop(numFeature).map { it.trim().toFloat() }
         )
     }
 

@@ -59,8 +59,6 @@ class LoginActivity : AppCompatActivity(),
     private val FILE_PATH: String = "/sync"
     private var mGeneratorExecutor: ScheduledExecutorService? = null
     private var mDataItemGeneratorFuture: ScheduledFuture<*>? = null
-    //private var mDataItemListAdapter: DataItemAdapter? = null
-    //private val mDataItemList: ListView? = null
 
 
     init {
@@ -88,7 +86,6 @@ class LoginActivity : AppCompatActivity(),
             Log.d(TAG, "dir doesn't exist, create it now")
             dir.mkdir()
         }
-
         binding.button.setOnClickListener {
             val dataFile = File(dir, "data.csv")
             if (!dataFile.exists()) {
@@ -129,19 +126,11 @@ class LoginActivity : AppCompatActivity(),
                 Log.d(TAG, "dir doesn't exist, create it now")
                 dir.mkdir()
             }
-            val modelFile = File(dir, "model.pt")
+            val modelFile = File(dir, "model.pb")
             if (!modelFile.exists()) {
                 Log.d(TAG, "no model")
             }
             toAsset(modelFile)?.let { it1 -> sendModel(it1) }
-
-            /*val modelfile = File("${this.filesDir}/sync", "model.pt")
-            val updateModel = object : UpdateModel() {
-                override fun onPostExecute(bool: Boolean?) {
-                    super.onPostExecute(bool)
-                }
-            }
-            updateModel.execute(modelfile)*/
         }
 
         mGeneratorExecutor = ScheduledThreadPoolExecutor(1)
@@ -217,16 +206,11 @@ class LoginActivity : AppCompatActivity(),
             TAG, "onMessageReceived() A message from watch was received:"
                  + messageEvent
         )
-        // ------ send ------------
-        /*mDataItemListAdapter!!.add(
-            Event("Message from watch", messageEvent.toString())
-        )*/
     }
 
     override fun onCapabilityChanged(capabilityInfo: CapabilityInfo) {
         Log.d(TAG, "onCapabilityChanged:" + capabilityInfo);
     }
-    // ------ send/rec ------------
 
     // ------ send ------------
     // for transmissions
@@ -326,7 +310,6 @@ class LoginActivity : AppCompatActivity(),
             }
         }
     }
-    // ------ send ------------
 
     // ------ rec ------------
     private class LoadBitmapAsyncTask :

@@ -1,10 +1,10 @@
 ## Introduction
 
-Federated-Wearables is a demo for federated learning () over wearables based on [KotlinSyft](https://github.com/OpenMined/KotlinSyft) and [PySyft](https://github.com/OpenMined/PySyft). This is  the code of the smartwatch which offloads the collected data to the paired phone via Bluetooth for training in FL, and gets the updated model to run interface in real time.
+Federated-Wearables is a demo for cross-device federated learning over wearables based on [KotlinSyft](https://github.com/OpenMined/KotlinSyft) and [PySyft](https://github.com/OpenMined/PySyft). This is  the code of the smartwatch which offloads the collected data to the paired phone via Bluetooth for training in FL, and gets the updated model to run interface in real time.
 
-In this demo, we conduct an activity recognition task. We also develop a companion app in `Application` directory. Specifically, the app enables users manually correct the labels to generated precise training samples upon witnessing wrong interface given by the model. 
+In this demo, we conduct an activity recognition task. To coordinate the FL and alleviate the calculation burden of wearables, we developed a companion app in `Application` directory. Notably, the app enables users manually correct the labels to generate more precise training samples upon witnessing wrong interface given by the model. 
 
-Feel free to use this demo for your own task or application.
+Feel free to use this demo for your own task or application:)
 
 ## Inference
 

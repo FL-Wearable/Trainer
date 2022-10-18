@@ -6,6 +6,10 @@ In this demo, we conduct an activity recognition task. To coordinate the FL and 
 
 Feel free to use this demo for your own task or application:)
 
+## Demo
+
+https://youtu.be/r-to_t99E4Q
+
 ## UI
 <img src="/pic/watch1.png " width="200" height="200" /> <img src="/pic/watch2.png " width="200" height="200" /> <img src="/pic/watch3.png " width="200" height="200" /> 
 
